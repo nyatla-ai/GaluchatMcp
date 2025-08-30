@@ -1,4 +1,3 @@
 /vendor/
 app/var/
-app/.env
-.phpunit.result.cache
+
