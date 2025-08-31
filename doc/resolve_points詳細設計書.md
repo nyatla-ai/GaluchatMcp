@@ -50,14 +50,13 @@
 ```jsonc
 {
   "granularity": "admin|estat|jarl",   // 省略時は "admin"
-  "points": [
-    { "ref?": "string<=128", "lat": number, "lon": number, "t?": "RFC3339" }
-  ]
+    "points": [
+    { "ref?": "string<=128", "lat": number, "lon": number }
+    ]
 }
 ```
 
 * `ref`：任意の参照ラベル。**MCP 内だけで使用**。API には送らない。
-* `t`：任意。**受理のみ**（保存・解釈なし）。
 * 座標系：WGS84。**有効範囲は GaluchatAPI が判定する**。
 * 入力点数：制限なし（API が許容する範囲）。
 
@@ -73,9 +72,9 @@
       "payload": { "code": "string", "address": "string" } // GaluchatAPI codes[i], addresses[i]
     }
   ],
-  "errors": [
-    { "ref?": "...", "lat": number, "lon": number, "reason": "INVALID_COORD|API_ERROR|RATE_LIMIT|OUT_OF_COVERAGE|INVALID_REF|INVALID_T" }
-  ]
+    "errors": [
+    { "ref?": "...", "lat": number, "lon": number, "reason": "INVALID_COORD|API_ERROR|RATE_LIMIT|OUT_OF_COVERAGE|INVALID_REF" }
+    ]
 }
 ```
 
@@ -124,7 +123,7 @@ return [
 
 ## 5. 処理フロー（仕様）
 
-1. **入力検証**：全点について `ref` 長さと文字集合、`t` 形式（RFC3339）を確認。`lat/lon` の有効範囲は GaluchatAPI が判定する。失敗点は `errors` に即時格納。
+1. **入力検証**：全点について `ref` 長さと文字集合を確認。`lat/lon` の有効範囲は GaluchatAPI が判定する。失敗点は `errors` に即時格納。
 2. **granularity 決定**：省略時 `admin`。
  3. **設定読込**：`base_url`、`mapset[granularity]`、`unit` を取得。
  4. **リクエスト構築**：
@@ -147,7 +146,6 @@ return [
 | ----------------- | ----------------- | ------------------------- |
 | `INVALID_COORD`   | 経緯度の数値不正           | 当該点を `errors` に格納、以降処理しない |
 | `INVALID_REF`     | 参照ラベルの長さ・文字集合逸脱   | `ref` を無視（必要なら errors へ）  |
-| `INVALID_T`       | RFC3339 不一致       | `t` を無視（必要なら errors へ）    |
 | `API_ERROR`       | 4xx/5xx 等サーバ応答エラー | 当該点を `errors` に格納 |
 | `RATE_LIMIT`      | 429 応答            | 当該点を `errors` に格納 |
 | `OUT_OF_COVERAGE` | API 返却に基づくカバー外    | 当該点を `errors`             |

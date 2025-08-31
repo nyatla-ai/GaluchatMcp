@@ -39,7 +39,7 @@
           "lon": { "type": "number" },
           "reason": {
             "type": "string",
-            "enum": ["INVALID_COORD", "INVALID_REF", "INVALID_T", "API_ERROR", "RATE_LIMIT", "OUT_OF_COVERAGE"]
+            "enum": ["INVALID_COORD", "INVALID_REF", "API_ERROR", "RATE_LIMIT", "OUT_OF_COVERAGE"]
           }
         },
         "required": ["lat", "lon", "reason"],
