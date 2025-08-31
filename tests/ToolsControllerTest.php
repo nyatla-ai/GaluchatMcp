@@ -29,8 +29,8 @@ class ToolsControllerTest extends TestCase
     {
         $client = $this->createMock(GaluchatClient::class);
         $client->method('resolve')->willReturn([
-            ['code' => '13101', 'name' => 'A'],
-            ['code' => '13102', 'name' => 'B']
+            ['code' => '13101', 'address' => 'A'],
+            ['code' => '13102', 'address' => 'B']
         ]);
         $app = $this->createApp($client);
         $payload = [
@@ -46,7 +46,8 @@ class ToolsControllerTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode((string)$response->getBody(), true);
         $this->assertCount(2, $data['results']);
-        $this->assertEmpty($data['failed']);
+        $this->assertEmpty($data['errors']);
+        $this->assertSame('13101', $data['results'][0]['payload']['code']);
     }
 
     public function testInvalidTimeFormat(): void
@@ -56,12 +57,15 @@ class ToolsControllerTest extends TestCase
         $app = $this->createApp($client);
         $payload = [
             'points' => [
-                ['lat' => 35.0, 'lon' => 135.0, 't' => '2024-01-01']
+                ['lat' => 35.0, 'lon' => 135.0, 't' => '2024-01-01T00:00:00']
             ]
         ];
         $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/resolve_points')
             ->withParsedBody($payload);
         $response = $app->handle($request);
-        $this->assertSame(400, $response->getStatusCode());
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertNotEmpty($data['errors']);
+        $this->assertSame('INVALID_T', $data['errors'][0]['reason']);
     }
 }

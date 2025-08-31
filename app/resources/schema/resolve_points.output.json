@@ -2,34 +2,51 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "granularity": {
+      "type": "string",
+      "enum": ["admin", "estat", "jarl"]
+    },
     "results": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
           "ref": { "type": "string" },
-          "code": { "type": "string" },
-          "name": { "type": "string" }
+          "lat": { "type": "number" },
+          "lon": { "type": "number" },
+          "ok": { "type": "boolean" },
+          "payload": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "address": { "type": "string" }
+            },
+            "required": ["code", "address"],
+            "additionalProperties": true
+          }
         },
-        "required": ["code", "name"],
+        "required": ["lat", "lon", "ok", "payload"],
         "additionalProperties": false
       }
     },
-    "failed": {
+    "errors": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "index": { "type": "integer" },
           "ref": { "type": "string" },
-          "code": { "type": "string", "enum": ["OUT_OF_RANGE", "INVALID_ARGUMENT"] }
+          "lat": { "type": "number" },
+          "lon": { "type": "number" },
+          "reason": {
+            "type": "string",
+            "enum": ["INVALID_COORD", "INVALID_REF", "INVALID_T", "API_ERROR", "RATE_LIMIT", "OUT_OF_COVERAGE"]
+          }
         },
-        "required": ["index", "code"],
+        "required": ["lat", "lon", "reason"],
         "additionalProperties": false
       }
-    },
-    "attribution": { "type": "string" }
+    }
   },
-  "required": ["results", "failed", "attribution"],
+  "required": ["granularity", "results", "errors"],
   "additionalProperties": false
 }

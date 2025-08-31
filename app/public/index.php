@@ -17,19 +17,28 @@ if (file_exists($envPath)) {
     }
 }
 
+// load config via include
+$env = getenv('GALUCHAT_ENV') ?: 'dev';
+$configFile = __DIR__ . "/../config/resolve_points/config.$env.php";
+if (!file_exists($configFile)) {
+    throw new RuntimeException("missing config file: $configFile");
+}
+$config = include $configFile;
+foreach (['base_url', 'mapsets', 'unit'] as $k) {
+    if (!isset($config['galuchat'][$k])) {
+        throw new RuntimeException("config missing galuchat.$k");
+    }
+}
+
 $app = AppFactory::create();
 $app->addBodyParsingMiddleware();
 
-$baseUrl = getenv('GALUCHAT_BASE_URL') ?: 'https://galuchat.example.com';
-$timeout = (int)(getenv('TIMEOUT_MS') ?: 3000);
-
 $validator = new InputValidator();
-$client = new GaluchatClient($baseUrl, $timeout);
+$client = new GaluchatClient($config['galuchat']);
 $tools = new ToolsController($validator, $client);
 $mcp = new McpController();
 
 $app->get('/mcp/manifest', [$mcp, 'manifest']);
-
 $app->post('/tools/resolve_points', [$tools, 'resolvePoints'])
     ->add(new RateLimitMiddleware(5))
     ->add(new JsonSchemaMiddleware(__DIR__ . '/../resources/schema/resolve_points.input.json'));
