@@ -12,16 +12,18 @@ class McpController
             'tools' => [
                 [
                     'name' => 'resolve_points',
-                    'description' => 'Resolve coordinates to district code and name.',
+                    'description' => 'Resolve coordinates to district code and address.',
                     'input' => [
                         'granularity (optional): admin|estat|jarl, default admin',
                         'points: array of {ref?, lat, lon, t?}'
                     ],
                     'output' => [
-                        'results: array of {ref?, code, name}',
-                        'failed: array of {index, ref?, code}',
-                        'attribution: string'
+                        'granularity: admin|estat|jarl',
+                        'results: array of {ref?, lat, lon, ok, payload{code, address}}',
+                        'errors: array of {ref?, lat, lon, reason}'
                     ],
+                    'input_schema' => 'app/resources/schema/resolve_points.input.json',
+                    'output_schema' => 'app/resources/schema/resolve_points.output.json',
                     'example_input' => [
                         'granularity' => 'admin',
                         'points' => [
@@ -29,11 +31,19 @@ class McpController
                         ]
                     ],
                     'example_output' => [
+                        'granularity' => 'admin',
                         'results' => [
-                            ['code' => '00000', 'name' => 'Example']
+                            [
+                                'lat' => 35.0,
+                                'lon' => 135.0,
+                                'ok' => true,
+                                'payload' => [
+                                    'code' => '00000',
+                                    'address' => 'Example'
+                                ]
+                            ]
                         ],
-                        'failed' => [],
-                        'attribution' => 'Data via Galuchat API'
+                        'errors' => []
                     ]
                 ]
             ]
