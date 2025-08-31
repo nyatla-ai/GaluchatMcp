@@ -81,4 +81,34 @@ class ToolsController
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $response->withHeader('Content-Type', 'application/json');
     }
+
+    public function summarizeStays(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        [$valid, $errors] = $this->validator->validateSamples($data);
+
+        $stays = [];
+        $parts = [];
+        foreach ($valid as $sample) {
+            $start = new \DateTime($sample['start']);
+            $end = new \DateTime($sample['end']);
+            $duration = (int)floor(($end->getTimestamp() - $start->getTimestamp()) / 60);
+            $stays[] = [
+                'ref' => $sample['ref'],
+                'area' => $sample['area'],
+                'start' => $sample['start'],
+                'end' => $sample['end'],
+                'duration_minutes' => $duration
+            ];
+            $parts[] = sprintf('%sで%d分滞在', $sample['area'], $duration);
+        }
+
+        $payload = [
+            'summary' => implode('→', $parts),
+            'stays' => $stays,
+            'errors' => $errors
+        ];
+        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
 }
