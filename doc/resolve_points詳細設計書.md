@@ -7,16 +7,16 @@
 ## 1. スコープ／用語
 
 * **対象**：`resolve_points`（入力：座標点の配列、出力：逆ジオ結果）。
-* **外部API**：GaluchatAPI（逆ジオ系・画像系）。本機能で直接利用するのは **逆ジオ系バッチAPI**。
+* **外部API**：GaluchatAPI（逆ジオ系・画像系）。本機能で直接利用するのは **逆ジオ系 API**。
 * **granularity**：返却コードの種類（`admin`：行政区域、`estat`：統計小地域、`jarl`：JCC/JCG）。
 * **mapset**：GaluchatAPI のデータ版・解像度セット。**API の URL クエリパラメータ**として指定可（値は GaluchatAPI 側で定義）。
-* **unit**：バッチAPIの整数座標スケーリング係数（API 仕様）。
+* **unit**：GaluchatAPI の整数座標スケーリング係数（API 仕様）。
 
 ---
 
 ## 2. 外部APIとの契約（参照）
 
-`granularity` によって、呼び出す **バッチ版エンドポイント**を切替える。
+`granularity` によって、呼び出すエンドポイントを切替える。
 
 | granularity | API エンドポイント（POST） | 役割（返却コード）        |
 | ----------- | ----------------- | ---------------- |
@@ -59,7 +59,7 @@
 * `ref`：任意の参照ラベル。**MCP 内だけで使用**。API には送らない。
 * `t`：任意。**受理のみ**（保存・解釈なし）。
 * 座標系：WGS84。**有効範囲は GaluchatAPI が判定する**。
-* 入力点数：**上限は実装設定で制限**（API の 1 リクエスト上限 1000 件のバッチ分割を内部で行う）。
+* 入力点数：制限なし（API が許容する範囲）。
 
 ### 3.2 レスポンス（統一ラップ）
 
@@ -97,22 +97,14 @@
 ```php
 return [
   'galuchat' => [
-    'base_url'   => 'https://... ', // GaluchatAPI ベースURL
-    'timeout_ms' => 10000,
-    'mapsets'    => [
-      'admin' => 'ma10000',          // AACODE系（/raacs, /rjccs）
-      'estat' => 'estatremap10000',  // ESCODE系（/resareas）
-      'jarl'  => 'ma10000'           // AACODE系（/rjccs）
-    ],
-    'unit'       => 0.001            // バッチAPIの unit（度→整数）
+  'base_url'   => 'https://... ', // GaluchatAPI ベースURL
+  'timeout_ms' => 10000,
+  'mapsets'    => [
+    'admin' => 'ma10000',          // AACODE系（/raacs, /rjccs）
+    'estat' => 'estatremap10000',  // ESCODE系（/resareas）
+    'jarl'  => 'ma10000'           // AACODE系（/rjccs）
   ],
-  'batch' => [
-    'max_points_per_request' => 1000, // API 上限に合わせる
-    'parallel_requests'      => 4,    // レート制御とスループットのバランス
-    'preserve_order'         => true
-  ],
-  'retry' => [ 'max_attempts' => 2, 'backoff_ms' => 300 ],
-  'log'   => [ 'include_request_id' => true, 'include_mapset' => true ]
+  'unit'       => 0.001            // GaluchatAPI の unit（度→整数）
 ];
 ```
 
@@ -120,7 +112,7 @@ return [
 
 * `mapsets.admin`/`mapsets.jarl` は **AACODE 系の mapset 名**を設定（例：`ma1000`/`ma10000`）。
 * `mapsets.estat` は **ESCODE 系の mapset 名**を設定（例：`estatremap10000`）。
-* 値は **/apispec** や公式ドキュメントに掲載の有効名のみを使用。
+* 値は公式ドキュメントに掲載の有効名のみを使用。
 * これらの値は API 呼び出し時に URL クエリ `?mapset=` として利用され、POST ボディには含めない。
 
 **セキュリティ**：
@@ -134,22 +126,19 @@ return [
 
 1. **入力検証**：全点について `ref` 長さと文字集合、`t` 形式（RFC3339）を確認。`lat/lon` の有効範囲は GaluchatAPI が判定する。失敗点は `errors` に即時格納。
 2. **granularity 決定**：省略時 `admin`。
-3. **設定読込**：`base_url`、`mapset[granularity]`、`unit`、バッチ/リトライ設定を取得。
-4. **バッチ分割**：`max_points_per_request` 件で分割（例：1000件）。
-5. **リクエスト構築**：
+ 3. **設定読込**：`base_url`、`mapset[granularity]`、`unit` を取得。
+ 4. **リクエスト構築**：
 
-   * `unit` をボディに付与。
-   * `points` は `[ round(lon/unit), round(lat/unit) ]` 整数ペア列。
-   * `mapset` はクエリパラメータとして URL に付加。
-6. **API 呼び出し**：エンドポイントは granularity に応じて `/raacs`、`/resareas`、`/rjccs`。`mapset` を含む URL へ POST し、タイムアウトは設定値。
-7. **エラー処理**：
+     * `unit` をボディに付与。
+     * `points` は `[ round(lon/unit), round(lat/unit) ]` 整数ペア列。
+     * `mapset` はクエリパラメータとして URL に付加。
+ 5. **API 呼び出し**：エンドポイントは granularity に応じて `/raacs`、`/resareas`、`/rjccs`。`mapset` を含む URL へ POST し、タイムアウトは設定値。
+ 6. **エラー処理**：
 
-   * HTTP 429 → `RATE_LIMIT`（指数バックオフで規定回数まで再試行）。
-   * HTTP 4xx/5xx → `API_ERROR`（規定回数で打切り）。
-8. **応答マージ**：GaluchatAPI 応答の `codes[]` と `addresses[]` をインデックスで入力点へ対応付け、`payload` に `{code: codes[i], address: addresses[i]}` を格納。
-9. **順序整列**：指定時は入力順へ整列。
-10. **応答返却**：`granularity`、`results`、`errors` を返す。
-
+     * HTTP 429 → `RATE_LIMIT` を返却。
+     * HTTP 4xx/5xx → `API_ERROR` を返却。
+ 7. **応答マージ**：GaluchatAPI 応答の `codes[]` と `addresses[]` をインデックスで入力点へ対応付け、`payload` に `{code: codes[i], address: addresses[i]}` を格納。
+ 8. **応答返却**：`granularity`、`results`、`errors` を返す。
 ---
 
 ## 6. エラー仕様（MCP 側）
@@ -159,8 +148,8 @@ return [
 | `INVALID_COORD`   | 経緯度の数値不正           | 当該点を `errors` に格納、以降処理しない |
 | `INVALID_REF`     | 参照ラベルの長さ・文字集合逸脱   | `ref` を無視（必要なら errors へ）  |
 | `INVALID_T`       | RFC3339 不一致       | `t` を無視（必要なら errors へ）    |
-| `API_ERROR`       | 4xx/5xx 等サーバ応答エラー | リトライ規定後、当該点を `errors`     |
-| `RATE_LIMIT`      | 429 応答            | バックオフ再試行後、失敗分は `errors`   |
+| `API_ERROR`       | 4xx/5xx 等サーバ応答エラー | 当該点を `errors` に格納 |
+| `RATE_LIMIT`      | 429 応答            | 当該点を `errors` に格納 |
 | `OUT_OF_COVERAGE` | API 返却に基づくカバー外    | 当該点を `errors`             |
 
 > 備考：API からの **意味的エラー（mapset不適合など）** は `API_ERROR` に包含。ログには `status`/メッセージを保存。
@@ -169,9 +158,7 @@ return [
 
 ## 7. 性能・運用
 
-* **並列度**は設定値で制御（既定：4）。レート制限（例：1s/10req）に抵触しないよう調整。
-* **大規模入力**（例：1〜10万点）は 1000 件バッチで順次投入。タイムアウトと再試行により部分成功を許容。
-* **監査**：起動時に `/apispec` を取得し、設定 `mapset` が有効一覧に存在するかを警告ログ出力（自動修正は行わない）。
+* 単一リクエストで全入力を処理する。タイムアウト値のみ適切に設定する。
 
 ---
 
@@ -180,12 +167,8 @@ return [
 1. **API切替**：`granularity` ごとに正しいエンドポイントへ送信される。
 2. **mapset透過**：設定の `mapset` が URL クエリに正しく付加される（admin/jarl=AACODE、estat=ESCODE）。
 3. **unit丸め**：境界近傍の丸め誤差でも逆転しない（許容差の定義）。
-4. **分割挙動**：1001 点以上で 1000/1 の 2 バッチになる。
-5. **順序保持**：`preserve_order` 有効時、`results` が入力順に一致。
-6. **レート超過**：429 を受けてバックオフ→再試行→失敗時は `errors` に適切反映。
-7. **部分成功**：一部バッチが失敗しても成功分を返す。
-8. **設定異常**：mapset 未設定・型不整合で起動時エラー（Fail Fast）。
-9. **件数保持**：同一地点が続く場合でも結果数が入力数と一致する。
+4. **レート超過**：429 を受けた場合に `errors` へ `RATE_LIMIT` が記録される。
+5. **件数保持**：同一地点が続く場合でも結果数が入力数と一致する。
 
 
 ---
@@ -194,14 +177,14 @@ return [
 
 * 設定ファイルは **return 配列のみ**（副作用禁止）。
 * 機微値（API鍵など）は **別ファイル**または環境変数で扱い、公開リポに含めない。
-* タイムアウト・リトライを適切に設定し、API 側の一時障害に耐性。
+* タイムアウトを適切に設定し、API 側の一時障害に備える。
 
 ---
 
 ## 10. 変更容易性（将来拡張）
 
 * **mapset の切替**：設定ファイルの値変更のみで反映（デプロイ単位）。
-* **API拡張**：将来 `options` を I/F に追加し、`mapset` 上書きや `/apispec` の情報ミラーリングを許容可能（デフォルト無効）。
+* **API拡張**：将来 `options` を I/F に追加し、`mapset` 上書きや API 情報のミラーリングを許容可能（デフォルト無効）。
 * **メタ情報**：API が返すデータ版などがある場合、`payload` に保持。必要時のみ `meta` にミラー（前方互換）。
 
 ---
