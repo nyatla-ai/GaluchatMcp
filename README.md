@@ -34,14 +34,18 @@ php -S localhost:8080 -t app/public
 Returns manifest describing available tools.
 
 ### `POST /tools/resolve_points`
-Resolve points to district codes.
+Resolve points to district codes. Successful points appear in `results` with
+`ref`, `lat`, `lon`, `ok: true`, and a `payload` containing `code`
+(administrative code) and `address` (resolved address). Points that cannot be
+resolved are listed in `errors` with `ref`, `lat`, `lon`, and a `reason`; these
+entries do not include `payload`.
 
 Request body:
 ```json
 {
   "granularity": "admin",
   "points": [
-    {"ref": "row_0001", "lat": 35.681240, "lon": 139.767120, "t": "2025-08-29T09:00:00Z"},
+    {"ref": "row_0001", "lat": 35.681240, "lon": 139.767120},
     {"ref": "row_0002", "lat": 35.695800, "lon": 139.751400}
   ]
 }
@@ -50,12 +54,27 @@ Request body:
 Response body:
 ```json
 {
+  "granularity": "admin",
   "results": [
-    {"ref": "row_0001", "code": "13101", "name": "東京都千代田区"},
-    {"ref": "row_0002", "code": "13102", "name": "東京都中央区"}
+    {
+      "ref": "row_0001",
+      "lat": 35.681240,
+      "lon": 139.767120,
+      "ok": true,
+      "payload": {
+        "code": "13101",
+        "address": "東京都千代田区"
+      }
+    }
   ],
-  "failed": [],
-  "attribution": "Data via Galuchat API"
+  "errors": [
+    {
+      "ref": "row_0002",
+      "lat": 35.695800,
+      "lon": 139.751400,
+      "reason": "OUT_OF_COVERAGE"
+    }
+  ]
 }
 ```
 
