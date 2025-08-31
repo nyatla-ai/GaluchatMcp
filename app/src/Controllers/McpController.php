@@ -45,6 +45,37 @@ class McpController
                         ],
                         'errors' => []
                     ]
+                ],
+                [
+                    'name' => 'summarize_stays',
+                    'description' => 'Summarize stay records and durations.',
+                    'input' => [
+                        'samples: array of {ref?, area, start, end}'
+                    ],
+                    'output' => [
+                        'summary: string',
+                        'stays: array of {ref?, area, start, end, duration_minutes}',
+                        'errors: array of {ref?, reason}'
+                    ],
+                    'input_schema' => 'app/resources/schema/summarize_stays.input.json',
+                    'output_schema' => 'app/resources/schema/summarize_stays.output.json',
+                    'example_input' => [
+                        'samples' => [
+                            ['area' => 'Area1', 'start' => '2024-01-01T00:00:00Z', 'end' => '2024-01-01T01:00:00Z']
+                        ]
+                    ],
+                    'example_output' => [
+                        'summary' => 'Area1で60分滞在',
+                        'stays' => [
+                            [
+                                'area' => 'Area1',
+                                'start' => '2024-01-01T00:00:00Z',
+                                'end' => '2024-01-01T01:00:00Z',
+                                'duration_minutes' => 60
+                            ]
+                        ],
+                        'errors' => []
+                    ]
                 ]
             ]
         ];

@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "summary": { "type": "string" },
+    "stays": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ref": { "type": "string" },
+          "area": { "type": "string" },
+          "start": { "type": "string", "format": "date-time" },
+          "end": { "type": "string", "format": "date-time" },
+          "duration_minutes": { "type": "number" }
+        },
+        "required": ["area", "start", "end", "duration_minutes"],
+        "additionalProperties": false
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ref": { "type": "string" },
+          "reason": {
+            "type": "string",
+            "enum": ["INVALID_TIME_RANGE", "INVALID_AREA", "INVALID_REF"]
+          }
+        },
+        "required": ["reason"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["summary", "stays", "errors"],
+  "additionalProperties": false
+}
