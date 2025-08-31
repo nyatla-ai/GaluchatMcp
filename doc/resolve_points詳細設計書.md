@@ -9,7 +9,7 @@
 * **対象**：`resolve_points`（入力：座標点の配列、出力：逆ジオ結果）。
 * **外部API**：GaluchatAPI（逆ジオ系・画像系）。本機能で直接利用するのは **逆ジオ系バッチAPI**。
 * **granularity**：返却コードの種類（`admin`：行政区域、`estat`：統計小地域、`jarl`：JCC/JCG）。
-* **mapset**：GaluchatAPI のデータ版・解像度セット。**API のパラメータ**として指定可（値は GaluchatAPI 側で定義）。
+* **mapset**：GaluchatAPI のデータ版・解像度セット。**API の URL クエリパラメータ**として指定可（値は GaluchatAPI 側で定義）。
 * **unit**：バッチAPIの整数座標スケーリング係数（API 仕様）。
 
 ---
@@ -26,19 +26,20 @@
 
 **POST ボディの共通骨子**（API 仕様）
 
+`mapset` は URL クエリパラメータとして指定する。
+
 ```jsonc
 {
   "unit": <number>,
-  "mapset": "<string>",
   "points": [ [<lon_int>, <lat_int>], ... ]
 }
 ```
 
 * `points` は **\[経度, 緯度] の整数ペア配列**。
 * `unit` は **度→整数** のスケール（例：`0.001` なら `lon_int = round(lon / 0.001)`）。
-* `mapset` は **API 側で定義済みの識別子**（granularity に適合するものを指定）。
+* `mapset` は **API 側で定義済みの識別子**（granularity に適合するものを指定）で、URL クエリ `?mapset=` として渡す。
 
-> 注意：各 API が受け付ける `mapset` の種類（AACODE/ESCODE 等）は **GaluchatAPI 仕様の制約に従う**。MCP は **granularity ごとに適合した mapset** のみを設定から渡す。
+> 注意：各 API が受け付ける `mapset` の種類（AACODE/ESCODE 等）は **GaluchatAPI 仕様の制約に従う**。MCP は **granularity ごとに適合した mapset** のみを URL クエリとして付加する。
 
 ---
 
@@ -120,6 +121,7 @@ return [
 * `mapsets.admin`/`mapsets.jarl` は **AACODE 系の mapset 名**を設定（例：`ma1000`/`ma10000`）。
 * `mapsets.estat` は **ESCODE 系の mapset 名**を設定（例：`estatremap10000`）。
 * 値は **/apispec** や公式ドキュメントに掲載の有効名のみを使用。
+* これらの値は API 呼び出し時に URL クエリ `?mapset=` として利用され、POST ボディには含めない。
 
 **セキュリティ**：
 
@@ -134,12 +136,12 @@ return [
 2. **granularity 決定**：省略時 `admin`。
 3. **設定読込**：`base_url`、`mapset[granularity]`、`unit`、バッチ/リトライ設定を取得。
 4. **バッチ分割**：`max_points_per_request` 件で分割（例：1000件）。
-5. **POST ボディ構築**：
+5. **リクエスト構築**：
 
-   * `unit` を付与。
-   * `mapset` に **設定値**をそのまま格納。
+   * `unit` をボディに付与。
    * `points` は `[ round(lon/unit), round(lat/unit) ]` 整数ペア列。
-6. **API 呼び出し**：エンドポイントは granularity に応じて `/raacs`、`/resareas`、`/rjccs`。タイムアウトは設定値。
+   * `mapset` はクエリパラメータとして URL に付加。
+6. **API 呼び出し**：エンドポイントは granularity に応じて `/raacs`、`/resareas`、`/rjccs`。`mapset` を含む URL へ POST し、タイムアウトは設定値。
 7. **エラー処理**：
 
    * HTTP 429 → `RATE_LIMIT`（指数バックオフで規定回数まで再試行）。
@@ -176,7 +178,7 @@ return [
 ## 8. テスト観点（受け入れ基準）
 
 1. **API切替**：`granularity` ごとに正しいエンドポイントへ送信される。
-2. **mapset透過**：設定の `mapset` がボディへ正しく入る（admin/jarl=AACODE、estat=ESCODE）。
+2. **mapset透過**：設定の `mapset` が URL クエリに正しく付加される（admin/jarl=AACODE、estat=ESCODE）。
 3. **unit丸め**：境界近傍の丸め誤差でも逆転しない（許容差の定義）。
 4. **分割挙動**：1001 点以上で 1000/1 の 2 バッチになる。
 5. **順序保持**：`preserve_order` 有効時、`results` が入力順に一致。
@@ -216,12 +218,11 @@ return [
 }
 ```
 
-### 内部POST（/resareas）
+### 内部POST（/resareas?mapset=estatremap10000）
 
 ```jsonc
 {
   "unit": 0.001,
-  "mapset": "estatremap10000",
   "points": [ [139760, 35683], [139692, 35690] ]
 }
 ```
