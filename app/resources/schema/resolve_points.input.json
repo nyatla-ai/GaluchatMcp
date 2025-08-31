@@ -26,9 +26,6 @@
           "lon": {
             "type": "number",
             "multipleOf": 0.000001
-          },
-          "t": {
-            "type": "string"
           }
         },
         "required": ["lat", "lon"],

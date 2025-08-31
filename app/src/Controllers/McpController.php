@@ -15,7 +15,7 @@ class McpController
                     'description' => 'Resolve coordinates to district code and address.',
                     'input' => [
                         'granularity (optional): admin|estat|jarl, default admin',
-                        'points: array of {ref?, lat, lon, t?}'
+                        'points: array of {ref?, lat, lon}'
                     ],
                     'output' => [
                         'granularity: admin|estat|jarl',
