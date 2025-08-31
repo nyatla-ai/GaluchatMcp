@@ -21,39 +21,62 @@ class ToolsController
     public function resolvePoints(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
-        [$valid, $failed] = $this->validator->validate($data);
         $granularity = $data['granularity'] ?? 'admin';
-
-        try {
-            $apiResults = $this->client->resolve($granularity, $valid);
-        } catch (\Throwable $e) {
-            $response->getBody()->write(json_encode(Errors::format(Errors::INTERNAL, 'Backend error')));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
+        [$valid, $invalid] = $this->validator->validate($data);
 
         $results = [];
-        $validIdx = 0;
-        foreach ($data['points'] as $i => $pt) {
-            $isFailed = false;
-            foreach ($failed as $f) {
-                if ($f['index'] === $i) { $isFailed = true; break; }
+        $errors = [];
+        try {
+            $apiResults = $this->client->resolve($granularity, $valid);
+        } catch (\RuntimeException $e) {
+            $reason = $e->getMessage();
+            foreach ($valid as $pt) {
+                $errors[] = [
+                    'ref' => $pt['ref'] ?? null,
+                    'lat' => $pt['lat'],
+                    'lon' => $pt['lon'],
+                    'reason' => $reason
+                ];
             }
-            if ($isFailed) { continue; }
-            $apiRes = $apiResults[$validIdx++] ?? ['code' => '', 'name' => ''];
-            $entry = [
-                'code' => $apiRes['code'],
-                'name' => $apiRes['name']
+            $apiResults = [];
+        }
+
+        foreach ($invalid as $e) {
+            $errors[] = [
+                'ref' => $e['ref'] ?? null,
+                'lat' => $e['lat'],
+                'lon' => $e['lon'],
+                'reason' => $e['reason']
             ];
-            if (isset($pt['ref'])) {
-                $entry['ref'] = $pt['ref'];
+        }
+
+        foreach ($valid as $i => $pt) {
+            $apiRes = $apiResults[$i] ?? null;
+            if ($apiRes === null || empty($apiRes['code'])) {
+                $errors[] = [
+                    'ref' => $pt['ref'] ?? null,
+                    'lat' => $pt['lat'],
+                    'lon' => $pt['lon'],
+                    'reason' => Errors::OUT_OF_COVERAGE
+                ];
+                continue;
             }
-            $results[] = $entry;
+            $results[] = [
+                'ref' => $pt['ref'] ?? null,
+                'lat' => $pt['lat'],
+                'lon' => $pt['lon'],
+                'ok' => true,
+                'payload' => [
+                    'code' => $apiRes['code'],
+                    'address' => $apiRes['address']
+                ]
+            ];
         }
 
         $payload = [
+            'granularity' => $granularity,
             'results' => $results,
-            'failed' => $failed,
-            'attribution' => 'Data via Galuchat API'
+            'errors' => $errors
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $response->withHeader('Content-Type', 'application/json');
