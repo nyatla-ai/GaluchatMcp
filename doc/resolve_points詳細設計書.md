@@ -70,7 +70,7 @@
     {
       "ref?": "...", "lat": number, "lon": number,
       "ok": true,
-      "payload": { /* GaluchatAPI の生レスポンス要素 */ }
+      "payload": { "code": "string", "address": "string" } // GaluchatAPI codes[i], addresses[i]
     }
   ],
   "errors": [
@@ -79,7 +79,7 @@
 }
 ```
 
-* `payload` は **変形せず** API 応答を格納（前方互換性のため）。
+* `payload` は GaluchatAPI 応答の `codes[i]` と `addresses[i]` を `{code, address}` として格納（追加フィールドがある場合は原文を保持）。
 * 入力順の保持：`preserve_order=true` 設定時、`results` を入力順へ整列。
 
 ---
@@ -146,7 +146,7 @@ return [
 
    * HTTP 429 → `RATE_LIMIT`（指数バックオフで規定回数まで再試行）。
    * HTTP 4xx/5xx → `API_ERROR`（規定回数で打切り）。
-8. **応答マージ**：バッチごとの応答を入力点へ対応付け、`payload` に **生データ**として格納。
+8. **応答マージ**：GaluchatAPI 応答の `codes[]` と `addresses[]` をインデックスで入力点へ対応付け、`payload` に `{code: codes[i], address: addresses[i]}` を格納。
 9. **順序整列**：指定時は入力順へ整列。
 10. **応答返却**：`granularity`、`results`、`errors` を返す。
 
@@ -227,17 +227,26 @@ return [
 }
 ```
 
+### 内部応答（例）
+
+```jsonc
+{
+  "codes": ["131010001", "131040001"],
+  "addresses": ["東京都千代田区千代田", "東京都新宿区西新宿"]
+}
+```
+
 ### 出力（概形）
 
 ```jsonc
 {
   "granularity": "estat",
   "results": [
-    { "ref": "p1", "lat": 35.68283, "lon": 139.75945, "ok": true, "payload": { /* API応答要素 */ } },
-    { "ref": "p2", "lat": 35.6895,  "lon": 139.6917,  "ok": true, "payload": { /* API応答要素 */ } }
+    { "ref": "p1", "lat": 35.68283, "lon": 139.75945, "ok": true, "payload": { "code": "131010001", "address": "東京都千代田区千代田" } },
+    { "ref": "p2", "lat": 35.6895,  "lon": 139.6917,  "ok": true, "payload": { "code": "131040001", "address": "東京都新宿区西新宿" } }
   ],
   "errors": []
 }
 ```
 
-> 注：`payload` の具体構造（コードや名称のフィールド名）は **API 原文どおり**とし、MCP では再マッピングしない。
+> 注：GaluchatAPI は `codes` と `addresses` の配列で応答するため、MCP はインデックス対応で `{code, address}` を組み立てる。追加フィールドがあれば API 原文どおり `payload` に保持する。
