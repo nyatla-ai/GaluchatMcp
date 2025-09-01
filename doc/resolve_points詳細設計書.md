@@ -67,19 +67,22 @@
   "granularity": "admin|estat|jarl",
   "results": [
     {
-      "ref?": "...", "lat": number, "lon": number,
-      "ok": true,
+      "ref?": "...",
+      "success": true,
       "payload": { "code": "string", "address": "string" } // GaluchatAPI codes[i], addresses[i]
+    },
+    {
+      "ref?": "...",
+      "success": false,
+      "error": { "code": "INVALID_COORD|API_ERROR|RATE_LIMIT|OUT_OF_COVERAGE|INVALID_REF", "message": "string" }
     }
-  ],
-    "errors": [
-    { "ref?": "...", "lat": number, "lon": number, "reason": "INVALID_COORD|API_ERROR|RATE_LIMIT|OUT_OF_COVERAGE|INVALID_REF" }
-    ]
+  ]
 }
 ```
 
 * `payload` は GaluchatAPI 応答の `codes[i]` と `addresses[i]` を `{code, address}` として格納（追加フィールドがある場合は原文を保持）。
-* `results` は入力点と一対一で対応し、**入力順・件数を保持し、圧縮は行わない**。`preserve_order=true` 設定時、`results` を入力順へ整列。
+* `lat` と `lon` は出力に含めない。入力の `ref` または配列順で照合する。
+* `results` は入力点と一対一で対応し、**入力順・件数を保持し、圧縮は行わない**。各要素に `success` フラグと `payload` または `error` を含める。`preserve_order=true` 設定時、`results` を入力順へ整列。
 
 ---
 
@@ -123,7 +126,7 @@ return [
 
 ## 5. 処理フロー（仕様）
 
-1. **入力検証**：全点について `ref` 長さと文字集合を確認。`lat/lon` の有効範囲は GaluchatAPI が判定する。失敗点は `errors` に即時格納。
+1. **入力検証**：全点について `ref` 長さと文字集合を確認。`lat/lon` の有効範囲は GaluchatAPI が判定する。失敗点は該当要素の `success` を `false` とし、`error.code` を設定。
 2. **granularity 決定**：省略時 `admin`。
  3. **設定読込**：`base_url`、`mapset[granularity]`、`unit` を取得。
  4. **リクエスト構築**：
@@ -137,18 +140,18 @@ return [
      * HTTP 429 → `RATE_LIMIT` を返却。
      * HTTP 4xx/5xx → `API_ERROR` を返却。
  7. **応答マージ**：GaluchatAPI 応答の `codes[]` と `addresses[]` をインデックスで入力点へ対応付け、`payload` に `{code: codes[i], address: addresses[i]}` を格納。
- 8. **応答返却**：`granularity`、`results`、`errors` を返す。
+8. **応答返却**：`granularity` と `results` を返す。
 ---
 
 ## 6. エラー仕様（MCP 側）
 
 | 種別                | 原因                | 取扱い                       |
 | ----------------- | ----------------- | ------------------------- |
-| `INVALID_COORD`   | 経緯度の数値不正           | 当該点を `errors` に格納、以降処理しない |
-| `INVALID_REF`     | 参照ラベルの長さ・文字集合逸脱   | `ref` を無視（必要なら errors へ）  |
-| `API_ERROR`       | 4xx/5xx 等サーバ応答エラー | 当該点を `errors` に格納 |
-| `RATE_LIMIT`      | 429 応答            | 当該点を `errors` に格納 |
-| `OUT_OF_COVERAGE` | API 返却に基づくカバー外    | 当該点を `errors`             |
+| `INVALID_COORD`   | 経緯度の数値不正           | 当該点の `success=false`、`error.code`=`INVALID_COORD` として処理中断 |
+| `INVALID_REF`     | 参照ラベルの長さ・文字集合逸脱   | `ref` を無視（必要なら `error.code`=`INVALID_REF`） |
+| `API_ERROR`       | 4xx/5xx 等サーバ応答エラー | 当該点の `success=false`、`error.code`=`API_ERROR` |
+| `RATE_LIMIT`      | 429 応答            | 当該点の `success=false`、`error.code`=`RATE_LIMIT` |
+| `OUT_OF_COVERAGE` | API 返却に基づくカバー外    | 当該点の `success=false`、`error.code`=`OUT_OF_COVERAGE` |
 
 > 備考：API からの **意味的エラー（mapset不適合など）** は `API_ERROR` に包含。ログには `status`/メッセージを保存。
 
@@ -165,7 +168,7 @@ return [
 1. **API切替**：`granularity` ごとに正しいエンドポイントへ送信される。
 2. **mapset透過**：設定の `mapset` が URL クエリに正しく付加される（admin/jarl=AACODE、estat=ESCODE）。
 3. **unit丸め**：境界近傍の丸め誤差でも逆転しない（許容差の定義）。
-4. **レート超過**：429 を受けた場合に `errors` へ `RATE_LIMIT` が記録される。
+4. **レート超過**：429 を受けた場合に該当点の `error.code` が `RATE_LIMIT` になる。
 5. **件数保持**：同一地点が続く場合でも結果数が入力数と一致する。
 
 
@@ -224,12 +227,11 @@ return [
 ```jsonc
 {
   "granularity": "estat",
-  "results": [
-    { "ref": "p1", "lat": 35.68283, "lon": 139.75945, "ok": true, "payload": { "code": "131010001", "address": "東京都千代田区千代田" } },
-    { "ref": "p2", "lat": 35.6895,  "lon": 139.6917,  "ok": true, "payload": { "code": "131040001", "address": "東京都新宿区西新宿" } }
-  ],
-  "errors": []
-}
+    "results": [
+      { "ref": "p1", "success": true, "payload": { "code": "131010001", "address": "東京都千代田区千代田" } },
+      { "ref": "p2", "success": true, "payload": { "code": "131040001", "address": "東京都新宿区西新宿" } }
+    ]
+  }
 ```
 
 > 注：GaluchatAPI は `codes` と `addresses` の配列で応答するため、MCP はインデックス対応で `{code, address}` を組み立てる。追加フィールドがあれば API 原文どおり `payload` に保持する。
