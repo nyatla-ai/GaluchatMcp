@@ -22,8 +22,8 @@
     {
       "start_ts": number,
       "end_ts": number,
-      "code": string,
-      "address": string,
+      "code": string|null,
+      "address": string|null,
       "duration_sec": number,
       "count": number
     }
@@ -31,6 +31,7 @@
 }
 ```
   - `results` は検出順。`code` は地区コード、`address` はその住所表記、`count` は滞在に含まれるサンプル数。
+  - GaluchatAPI が null を返した場合、対応する `code` と `address` も null として返却する。
   - 入力検証または GaluchatAPI 応答で問題が生じた場合は `results` を返さず、`{error:{code,message,location?}}` を返す。
 
 ## 3. 処理フロー
