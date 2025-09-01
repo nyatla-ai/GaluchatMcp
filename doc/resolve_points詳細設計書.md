@@ -66,7 +66,7 @@
 {
   "granularity": "admin|estat|jarl",
   "results": [
-    { "ref?": "...", "code": "string", "address": "string" }
+    { "ref?": "...", "code": "string|null", "address": "string|null" }
   ]
 }
 ```
@@ -74,6 +74,7 @@
 * `results` は全点が成功した場合のみ返却する。1点でもエラーが発生した場合は `results` を返さず、`{"error": {"code", "message", "location?"}}` 形式の単一エラー応答となる。
 * `lat` と `lon` は出力に含めない。入力の `ref` または配列順で照合する。
 * `results` は入力点と一対一で対応し、**入力順・件数を保持し、圧縮は行わない**。
+* GaluchatAPI が `null` を返す場合は `code` と `address` を共に `null` として保持する。
 
 ---
 
@@ -130,7 +131,7 @@ return [
 
     * HTTP 429 → `RATE_LIMIT` エラーを返却。
     * HTTP 4xx/5xx → ステータスとボディを含む `API_ERROR` を返却。
-7. **応答マージ**：GaluchatAPI 応答の `codes[]` と `addresses[]` をインデックスで入力点へ対応付け、`results` に `{ref?, code, address}` を push。応答配列長が入力と一致しない、またはコード欠落がある場合は問題の点を特定し `OUT_OF_COVERAGE` エラーを返す。
+7. **応答マージ**：GaluchatAPI 応答は共通して `{addresses:{<code>:<obj>}, aacodes|scodes:[<code|null>,...]}` 形式で返る。`admin`/`jarl` は `aacodes`、`estat` は `scodes` を用いる。各インデックスのコード値から `addresses[code]` を参照し、`admin`/`estat` は配列値をそのまま `code` に、`jarl` は辞書側の `code` を `code` に設定する。地名フィールドを連結して `address` 文字列を作成し、`{ref?, code, address}` を `results` に追加する。コードが `null` の場合は `address` も `null` としカバー外結果として保持する。応答件数が入力と一致しない、またはコードと `addresses` の対応が取れない場合は該当点を特定し `OUT_OF_COVERAGE` エラーを返す。
 8. **応答返却**：`granularity` と `results` を返す。
 ---
 
@@ -142,6 +143,8 @@ return [
 | `API_ERROR`      | GaluchatAPI からの 4xx/5xx 応答              |
 | `RATE_LIMIT`     | HTTP 429（レート制限）                       |
 | `OUT_OF_COVERAGE`| GaluchatAPI 応答の不整合やカバー外           |
+
+`code` と `address` が同時に `null` の要素はエラーではなく、カバー外結果として `results` にそのまま含める。
 
 いずれのエラーでも `results` は返さず、`{error:{code,message,location?}}` を返却する。`location` には問題があった点のインデックスや `ref` を含める。
 
@@ -188,20 +191,21 @@ return [
 
 ```jsonc
 {
-  "granularity": "estat",
+  "granularity": "admin",
   "points": [
     { "ref": "p1", "lat": 35.68283, "lon": 139.75945 },
-    { "ref": "p2", "lat": 35.6895,  "lon": 139.6917 }
+    { "ref": "p2", "lat": 35.6895,  "lon": 139.6917 },
+    { "ref": "p3", "lat": 0.0,      "lon": 0.0 }
   ]
 }
 ```
 
-### 内部POST（/resareas?mapset=estatremap10000）
+### 内部POST（/raacs?mapset=ma10000）
 
 ```jsonc
 {
   "unit": 0.001,
-  "points": [ [139760, 35683], [139692, 35690] ]
+  "points": [ [139760, 35683], [139692, 35690], [0, 0] ]
 }
 ```
 
@@ -209,8 +213,11 @@ return [
 
 ```jsonc
 {
-  "codes": ["131010001", "131040001"],
-  "addresses": ["東京都千代田区千代田", "東京都新宿区西新宿"]
+  "addresses": {
+    "131010001": { "prefecture": "東京都", "city": "千代田区" },
+    "131040001": { "prefecture": "東京都", "city": "新宿区" }
+  },
+  "aacodes": [131010001, 131040001, null]
 }
 ```
 
@@ -218,12 +225,13 @@ return [
 
 ```jsonc
 {
-  "granularity": "estat",
+  "granularity": "admin",
   "results": [
-    { "ref": "p1", "code": "131010001", "address": "東京都千代田区千代田" },
-    { "ref": "p2", "code": "131040001", "address": "東京都新宿区西新宿" }
+    { "ref": "p1", "code": "131010001", "address": "東京都千代田区" },
+    { "ref": "p2", "code": "131040001", "address": "東京都新宿区" },
+    { "ref": "p3", "code": null, "address": null }
   ]
 }
 ```
 
-> 注：GaluchatAPI は `codes` と `addresses` の配列で応答するため、MCP はインデックス対応で `{code, address}` を組み立てる。
+> 注：GaluchatAPI の `/raacs` 応答は `addresses` 辞書と `aacodes` 配列で構成されるため、MCP はコード配列の順に対応する地名を辞書から取得して `results` を構築する。
