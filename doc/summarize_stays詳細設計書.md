@@ -35,8 +35,8 @@
 
 ## 3. 処理フロー
 1. **入力検証**: `timestamp` が単調増加かつ数値であること、`lat`/`lon` が数値であることを確認。不正があれば該当サンプルのインデックスを `location` に含めた `INVALID_INPUT` エラーを返し処理を終了する。
-2. **地区コード解決**: 位置サンプルを Galuchat API に送り、対応する地区コードと住所を取得。
-3. **クラスタリング**: 連続して同じコードが続く区間を滞在として確定。1サンプルのみの区間も滞在として扱う。
+2. **地区コード解決**: 位置サンプルを Galuchat API に送り、対応する地区コードと住所を取得。GaluchatAPI が `null` を返したサンプルは `code` と `address` に `null` を設定する。
+3. **クラスタリング**: 連続して同じコードが続く区間を滞在として確定。`code` が `null` のサンプルも滞在として扱い、前後でクラスタが分かれる。1サンプルのみの区間も滞在として扱う。
 4. **集計**: 各クラスタから `start_ts`/`end_ts`/`code`/`address`/`duration_sec`/`count` を算出し `results` に push。
 
 ## 4. エラー仕様
@@ -54,3 +54,68 @@
 ## 5. 性能・運用
 - 入力規模は数千サンプルを想定し、線形アルゴリズムで処理。
 - 位置データは結果にのみ使用し、サーバーには永続保存しない。
+## 付録A：入出力サンプル（null コードを含む例）
+
+### 入力
+```jsonc
+{
+  "positions": [
+    {"timestamp": 0, "lat": 35.68283, "lon": 139.75945},
+    {"timestamp": 10, "lat": 0.0, "lon": 0.0},
+    {"timestamp": 20, "lat": 35.68283, "lon": 139.75945}
+  ]
+}
+```
+
+### GaluchatAPI 応答（例）
+```jsonc
+{
+  "addresses": {
+    "131010001": { "prefecture": "東京都", "city": "千代田区" }
+  },
+  "aacodes": [131010001, null, 131010001]
+}
+```
+
+### 地区コード解決後のサンプル
+```jsonc
+[
+  {"timestamp": 0, "code": "131010001", "address": "東京都千代田区"},
+  {"timestamp": 10, "code": null, "address": null},
+  {"timestamp": 20, "code": "131010001", "address": "東京都千代田区"}
+]
+```
+
+### 出力（null コードを含む）
+```jsonc
+{
+  "results": [
+    {
+      "start_ts": 0,
+      "end_ts": 0,
+      "code": "131010001",
+      "address": "東京都千代田区",
+      "duration_sec": 0,
+      "count": 1
+    },
+    {
+      "start_ts": 10,
+      "end_ts": 10,
+      "code": null,
+      "address": null,
+      "duration_sec": 0,
+      "count": 1
+    },
+    {
+      "start_ts": 20,
+      "end_ts": 20,
+      "code": "131010001",
+      "address": "東京都千代田区",
+      "duration_sec": 0,
+      "count": 1
+    }
+  ]
+}
+```
+
+> サンプル2は `code` と `address` が `null` に設定され、単独の滞在として出力される。
