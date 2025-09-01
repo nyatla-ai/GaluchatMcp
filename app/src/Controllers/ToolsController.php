@@ -44,10 +44,12 @@ class ToolsController
                     'ref' => $pt['ref'] ?? null
                 ]);
             }
+            $code = $apiRes['code'] ?? null;
+            $address = $code === null ? null : ($apiRes['address'] ?? null);
             $results[] = [
                 'ref' => $pt['ref'] ?? null,
-                'code' => $apiRes['code'] ?? null,
-                'address' => $apiRes['address'] ?? null
+                'code' => $code,
+                'address' => $address
             ];
         }
 
@@ -76,6 +78,7 @@ class ToolsController
 
         $results = [];
         $clusterCode = null;
+        $clusterAddress = null;
         $clusterStart = null;
         $clusterCount = 0;
         foreach ($positions as $i => $pos) {
@@ -84,23 +87,13 @@ class ToolsController
                 return $this->errorResponse($response, Errors::OUT_OF_COVERAGE, Errors::OUT_OF_COVERAGE, ['index' => $i]);
             }
             $code = $apiRes['code'] ?? null;
+            $address = $apiRes['address'] ?? null;
             if ($code === null) {
-                if ($clusterCount >= 2) {
-                    $endTs = $positions[$i - 1]['timestamp'];
-                    $results[] = [
-                        'start_ts' => $clusterStart,
-                        'end_ts' => $endTs,
-                        'code' => $clusterCode,
-                        'duration_sec' => $endTs - $clusterStart
-                    ];
-                }
-                $clusterCode = null;
-                $clusterStart = null;
-                $clusterCount = 0;
-                continue;
+                $address = null;
             }
-            if ($clusterCode === null) {
+            if ($clusterCount === 0) {
                 $clusterCode = $code;
+                $clusterAddress = $address;
                 $clusterStart = $pos['timestamp'];
                 $clusterCount = 1;
                 continue;
@@ -109,26 +102,31 @@ class ToolsController
                 $clusterCount++;
                 continue;
             }
-            if ($clusterCount >= 2) {
-                $endTs = $positions[$i - 1]['timestamp'];
-                $results[] = [
-                    'start_ts' => $clusterStart,
-                    'end_ts' => $endTs,
-                    'code' => $clusterCode,
-                    'duration_sec' => $endTs - $clusterStart
-                ];
-            }
+
+            $endTs = $positions[$i - 1]['timestamp'];
+            $results[] = [
+                'start_ts' => $clusterStart,
+                'end_ts' => $endTs,
+                'code' => $clusterCode,
+                'address' => $clusterAddress,
+                'duration_sec' => $endTs - $clusterStart,
+                'count' => $clusterCount
+            ];
+
             $clusterCode = $code;
+            $clusterAddress = $address;
             $clusterStart = $pos['timestamp'];
             $clusterCount = 1;
         }
-        if ($clusterCount >= 2) {
+        if ($clusterCount > 0) {
             $endTs = $positions[count($positions) - 1]['timestamp'];
             $results[] = [
                 'start_ts' => $clusterStart,
                 'end_ts' => $endTs,
                 'code' => $clusterCode,
-                'duration_sec' => $endTs - $clusterStart
+                'address' => $clusterAddress,
+                'duration_sec' => $endTs - $clusterStart,
+                'count' => $clusterCount
             ];
         }
 
@@ -139,7 +137,7 @@ class ToolsController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    private function errorResponse(Response $response, string $code, string $message, array $location = null): Response
+    private function errorResponse(Response $response, string $code, string $message, ?array $location = null): Response
     {
         $error = [
             'code' => $code,

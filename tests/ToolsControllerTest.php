@@ -56,7 +56,7 @@ class ToolsControllerTest extends TestCase
     {
         $client = $this->createMock(GaluchatClient::class);
         $client->method('resolve')->willReturn([
-            ['code' => null, 'address' => null]
+            ['code' => null, 'address' => 'IGNORED']
         ]);
         $app = $this->createApp($client);
         $payload = [

@@ -9,10 +9,12 @@
         "properties": {
           "start_ts": {"type": "number"},
           "end_ts": {"type": "number"},
-          "code": {"type": "string"},
-          "duration_sec": {"type": "number"}
+          "code": {"type": ["string", "null"]},
+          "address": {"type": ["string", "null"]},
+          "duration_sec": {"type": "number"},
+          "count": {"type": "number"}
         },
-        "required": ["start_ts", "end_ts", "code", "duration_sec"],
+        "required": ["start_ts", "end_ts", "code", "address", "duration_sec", "count"],
         "additionalProperties": false
       }
     }
