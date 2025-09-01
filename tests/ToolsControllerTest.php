@@ -9,6 +9,7 @@ use App\Controllers\ToolsController;
 use App\Middleware\JsonSchemaMiddleware;
 use App\Middleware\RateLimitMiddleware;
 use App\Services\GaluchatClient;
+use App\Domain\Errors;
 
 class ToolsControllerTest extends TestCase
 {
@@ -100,5 +101,43 @@ class ToolsControllerTest extends TestCase
         $this->assertSame('', $data['results'][0]['ref']);
         $this->assertNull($data['results'][1]['ref']);
         $this->assertNull($data['results'][2]['ref']);
+    }
+
+    public function testResolvePointsRateLimit(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willThrowException(new \RuntimeException(Errors::RATE_LIMIT));
+        $app = $this->createApp($client);
+        $payload = [
+            'points' => [
+                ['ref' => 'r1', 'lat' => 35.0, 'lon' => 135.0]
+            ]
+        ];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/resolve_points')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertSame('RATE_LIMIT', $data['error']['code']);
+        $this->assertSame('RATE_LIMIT', $data['error']['message']);
+    }
+
+    public function testResolvePointsOutOfCoverage(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willThrowException(new \RuntimeException(Errors::OUT_OF_COVERAGE));
+        $app = $this->createApp($client);
+        $payload = [
+            'points' => [
+                ['ref' => 'r1', 'lat' => 35.0, 'lon' => 135.0]
+            ]
+        ];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/resolve_points')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertSame('OUT_OF_COVERAGE', $data['error']['code']);
+        $this->assertSame('OUT_OF_COVERAGE', $data['error']['message']);
     }
 }
