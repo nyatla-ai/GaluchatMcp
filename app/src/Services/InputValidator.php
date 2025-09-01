@@ -66,6 +66,10 @@ class InputValidator
      */
     public function validatePositions(array $data): array
     {
+        if (count($data['positions']) > $this->maxPoints) {
+            throw new InvalidInputException('Too many positions', ['max' => $this->maxPoints]);
+        }
+
         $valid = [];
         $prevTs = null;
 
