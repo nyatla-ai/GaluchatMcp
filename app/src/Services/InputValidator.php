@@ -50,51 +50,41 @@ class InputValidator
     }
 
     /**
+     * Validate positions for summarize_stays.
+     *
      * @param array $data
-     * @return array [validSamples, errorSamples]
+     * @return array [validPositions, errorPositions]
      */
-    public function validateSamples(array $data): array
+    public function validatePositions(array $data): array
     {
         $valid = [];
         $errors = [];
-        foreach ($data['samples'] as $sample) {
-            $ref = $sample['ref'] ?? null;
-            $area = $sample['area'] ?? null;
-            $start = $sample['start'] ?? null;
-            $end = $sample['end'] ?? null;
+        $prevTs = null;
 
-            if ($ref !== null && !preg_match('/^[A-Za-z0-9._:-]{1,128}$/', $ref)) {
-                $errors[] = [
-                    'ref' => $ref,
-                    'reason' => Errors::INVALID_REF
-                ];
+        foreach ($data['positions'] as $index => $pos) {
+            $ts = $pos['timestamp'] ?? null;
+            $lat = $pos['lat'] ?? null;
+            $lon = $pos['lon'] ?? null;
+
+            if (!is_numeric($ts)) {
+                $errors[] = ['index' => $index, 'reason' => Errors::INVALID_TIMESTAMP];
                 continue;
             }
-
-            if (!is_string($area) || $area === '') {
-                $errors[] = [
-                    'ref' => $ref,
-                    'reason' => Errors::INVALID_AREA
-                ];
+            if ($prevTs !== null && $ts < $prevTs) {
+                $errors[] = ['index' => $index, 'reason' => Errors::INVALID_TIMESTAMP];
                 continue;
             }
-
-            $startTs = strtotime($start);
-            $endTs = strtotime($end);
-            if ($startTs === false || $endTs === false || $startTs >= $endTs) {
-                $errors[] = [
-                    'ref' => $ref,
-                    'reason' => Errors::INVALID_TIME_RANGE
-                ];
+            if (!is_numeric($lat) || !is_numeric($lon)) {
+                $errors[] = ['index' => $index, 'reason' => Errors::INVALID_COORD];
                 continue;
             }
 
             $valid[] = [
-                'ref' => $ref,
-                'area' => $area,
-                'start' => (new \DateTime($start))->format(DATE_RFC3339),
-                'end' => (new \DateTime($end))->format(DATE_RFC3339)
+                'timestamp' => (int)$ts,
+                'lat' => (float)$lat,
+                'lon' => (float)$lon,
             ];
+            $prevTs = (int)$ts;
         }
 
         return [$valid, $errors];

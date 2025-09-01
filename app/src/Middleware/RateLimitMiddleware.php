@@ -25,7 +25,7 @@ class RateLimitMiddleware implements MiddlewareInterface
         self::$requests[$ip] = array_filter(self::$requests[$ip] ?? [], fn($t) => $now - $t < 1);
         if (count(self::$requests[$ip]) >= $this->limit) {
             $response = new SlimResponse();
-            $response->getBody()->write(json_encode(Errors::format(Errors::RATE_LIMITED, 'Too many requests')));
+            $response->getBody()->write(json_encode(Errors::format(Errors::RATE_LIMIT, 'Too many requests')));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(429);
         }
         self::$requests[$ip][] = $now;

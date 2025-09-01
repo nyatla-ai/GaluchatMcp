@@ -31,9 +31,16 @@ class SummarizeStaysTest extends TestCase
     {
         $app = $this->createApp();
         $payload = [
-            'samples' => [
-                ['ref' => 'r1', 'area' => 'Area1', 'start' => '2024-01-01T00:00:00Z', 'end' => '2024-01-01T01:00:00Z'],
-                ['ref' => 'r2', 'area' => 'Area2', 'start' => '2024-01-01T01:00:00Z', 'end' => '2024-01-01T02:30:00Z']
+            'positions' => [
+                ['timestamp' => 0, 'lat' => 35.0, 'lon' => 135.0],
+                ['timestamp' => 60, 'lat' => 35.0, 'lon' => 135.0005],
+                ['timestamp' => 120, 'lat' => 35.0, 'lon' => 135.0],
+                ['timestamp' => 5000, 'lat' => 35.1, 'lon' => 135.1],
+                ['timestamp' => 5120, 'lat' => 35.1002, 'lon' => 135.1002]
+            ],
+            'params' => [
+                'distance_threshold_m' => 100,
+                'duration_threshold_sec' => 60
             ]
         ];
         $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/summarize_stays')
@@ -41,8 +48,7 @@ class SummarizeStaysTest extends TestCase
         $response = $app->handle($request);
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode((string)$response->getBody(), true);
-        $this->assertSame('Area1で60分滞在→Area2で90分滞在', $data['summary']);
-        $this->assertCount(2, $data['stays']);
+        $this->assertCount(2, $data['results']);
         $this->assertEmpty($data['errors']);
 
         $validator = new Validator();
@@ -55,8 +61,9 @@ class SummarizeStaysTest extends TestCase
     {
         $app = $this->createApp();
         $payload = [
-            'samples' => [
-                ['ref' => 'r1', 'area' => 'Area1', 'start' => '2024-01-01T02:00:00Z', 'end' => '2024-01-01T01:00:00Z']
+            'positions' => [
+                ['timestamp' => 10, 'lat' => 35.0, 'lon' => 135.0],
+                ['timestamp' => 5, 'lat' => 35.1, 'lon' => 135.1]
             ]
         ];
         $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/summarize_stays')
@@ -64,8 +71,8 @@ class SummarizeStaysTest extends TestCase
         $response = $app->handle($request);
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode((string)$response->getBody(), true);
-        $this->assertEmpty($data['stays']);
+        $this->assertEmpty($data['results']);
         $this->assertCount(1, $data['errors']);
-        $this->assertSame('INVALID_TIME_RANGE', $data['errors'][0]['reason']);
+        $this->assertSame('INVALID_TIMESTAMP', $data['errors'][0]['reason']);
     }
 }
