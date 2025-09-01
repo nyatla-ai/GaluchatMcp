@@ -101,10 +101,11 @@ Response body:
       "center": {"lat": 35.0, "lon": 135.00025},
       "duration_sec": 60
     }
-  ],
-  "errors": []
+  ]
 }
 ```
+
+Invalid position samples are ignored and omitted from the results.
 
 ## Error model
 
