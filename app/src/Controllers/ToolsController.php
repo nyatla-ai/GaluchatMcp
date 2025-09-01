@@ -32,7 +32,11 @@ class ToolsController
         try {
             $apiResults = $this->client->resolve($granularity, $valid);
         } catch (\RuntimeException $e) {
-            return $this->errorResponse($response, Errors::API_ERROR, $e->getMessage());
+            $msg = $e->getMessage();
+            $code = ($msg === Errors::RATE_LIMIT || $msg === Errors::OUT_OF_COVERAGE)
+                ? $msg
+                : Errors::API_ERROR;
+            return $this->errorResponse($response, $code, $msg);
         }
 
         $results = [];
@@ -73,7 +77,11 @@ class ToolsController
         try {
             $apiResults = $this->client->resolve('admin', $positions);
         } catch (\RuntimeException $e) {
-            return $this->errorResponse($response, Errors::API_ERROR, $e->getMessage());
+            $msg = $e->getMessage();
+            $code = ($msg === Errors::RATE_LIMIT || $msg === Errors::OUT_OF_COVERAGE)
+                ? $msg
+                : Errors::API_ERROR;
+            return $this->errorResponse($response, $code, $msg);
         }
 
         $results = [];
