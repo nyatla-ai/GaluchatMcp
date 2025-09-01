@@ -48,30 +48,30 @@ class McpController
                 ],
                 [
                     'name' => 'summarize_stays',
-                    'description' => 'Summarize stay records and durations.',
+                    'description' => 'Cluster timestamped positions into stay segments.',
                     'input' => [
-                        'samples: array of {ref?, area, start, end}'
+                        'positions: array of {timestamp, lat, lon}',
+                        'params (optional): {distance_threshold_m?, duration_threshold_sec?}'
                     ],
                     'output' => [
-                        'summary: string',
-                        'stays: array of {ref?, area, start, end, duration_minutes}',
-                        'errors: array of {ref?, reason}'
+                        'results: array of {start_ts, end_ts, center{lat,lon}, duration_sec}',
+                        'errors: array of {index, reason}'
                     ],
                     'input_schema' => 'app/resources/schema/summarize_stays.input.json',
                     'output_schema' => 'app/resources/schema/summarize_stays.output.json',
                     'example_input' => [
-                        'samples' => [
-                            ['area' => 'Area1', 'start' => '2024-01-01T00:00:00Z', 'end' => '2024-01-01T01:00:00Z']
+                        'positions' => [
+                            ['timestamp' => 0, 'lat' => 35.0, 'lon' => 135.0],
+                            ['timestamp' => 60, 'lat' => 35.0, 'lon' => 135.0005]
                         ]
                     ],
                     'example_output' => [
-                        'summary' => 'Area1で60分滞在',
-                        'stays' => [
+                        'results' => [
                             [
-                                'area' => 'Area1',
-                                'start' => '2024-01-01T00:00:00Z',
-                                'end' => '2024-01-01T01:00:00Z',
-                                'duration_minutes' => 60
+                                'start_ts' => 0,
+                                'end_ts' => 60,
+                                'center' => ['lat' => 35.0, 'lon' => 135.00025],
+                                'duration_sec' => 60
                             ]
                         ],
                         'errors' => []

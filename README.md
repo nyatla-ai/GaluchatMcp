@@ -78,12 +78,43 @@ Response body:
 }
 ```
 
+### `POST /tools/summarize_stays`
+Generate stay segments from timestamped position samples. The server clusters
+positions by distance and time thresholds and returns stay periods with their
+centers and durations.
+
+Request body:
+```json
+{
+  "positions": [
+    {"timestamp": 0, "lat": 35.0, "lon": 135.0},
+    {"timestamp": 60, "lat": 35.0, "lon": 135.0005}
+  ],
+  "params": {"distance_threshold_m": 100, "duration_threshold_sec": 60}
+}
+```
+
+Response body:
+```json
+{
+  "results": [
+    {
+      "start_ts": 0,
+      "end_ts": 60,
+      "center": {"lat": 35.0, "lon": 135.00025},
+      "duration_sec": 60
+    }
+  ],
+  "errors": []
+}
+```
+
 ## Error model
 
 ```
 {
   "error": {
-    "code": "INVALID_ARGUMENT|OUT_OF_RANGE|RATE_LIMITED|INTERNAL",
+    "code": "INVALID_ARGUMENT|OUT_OF_RANGE|RATE_LIMIT|INTERNAL",
     "message": "..."
   }
 }

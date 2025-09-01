@@ -2,19 +2,25 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "summary": { "type": "string" },
-    "stays": {
+    "results": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "ref": { "type": "string" },
-          "area": { "type": "string" },
-          "start": { "type": "string", "format": "date-time" },
-          "end": { "type": "string", "format": "date-time" },
-          "duration_minutes": { "type": "number" }
+          "start_ts": {"type": "number"},
+          "end_ts": {"type": "number"},
+          "center": {
+            "type": "object",
+            "properties": {
+              "lat": {"type": "number"},
+              "lon": {"type": "number"}
+            },
+            "required": ["lat", "lon"],
+            "additionalProperties": false
+          },
+          "duration_sec": {"type": "number"}
         },
-        "required": ["area", "start", "end", "duration_minutes"],
+        "required": ["start_ts", "end_ts", "center", "duration_sec"],
         "additionalProperties": false
       }
     },
@@ -23,10 +29,10 @@
       "items": {
         "type": "object",
         "properties": {
-          "ref": { "type": "string" },
+          "index": {"type": "number"},
           "reason": {
             "type": "string",
-            "enum": ["INVALID_TIME_RANGE", "INVALID_AREA", "INVALID_REF"]
+            "enum": ["INVALID_COORD", "INVALID_TIMESTAMP"]
           }
         },
         "required": ["reason"],
@@ -34,6 +40,6 @@
       }
     }
   },
-  "required": ["summary", "stays", "errors"],
+  "required": ["results", "errors"],
   "additionalProperties": false
 }

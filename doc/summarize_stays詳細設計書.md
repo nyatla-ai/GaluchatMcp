@@ -1,81 +1,51 @@
-# summarize_stays 詳細設計書（MCP 内部集計）
+# summarize_stays 詳細設計書（位置サンプル→滞在抽出）
 
-> 目的：GPS ログから抽出した滞在レコード `stays` を要約し、LLM が旅行記などを生成しやすい形式に整形する。
+## 1. スコープと用語
+- **position**: 単一観測点 `{timestamp, lat, lon}`。時刻は秒単位の数値。
+- **stay**: 連続した position のクラスタから得られる滞在区間。`start_ts`, `end_ts`, `center`, `duration_sec` を持つ。
+- **params**: 閾値設定。`distance_threshold_m` はクラスタ判定距離、`duration_threshold_sec` は採用最小滞在時間。
 
----
-
-## 1. スコープ／用語
-
-* **対象**：`summarize_stays`（入力：滞在レコード配列、出力：要約文字列と滞在一覧）。
-* **stay**：単一地区への滞在。`code` と `name` で地区を表し、`start_ts`/`end_ts` で期間を示す。
-* **granularity**：地区コードの粒度（`admin`：行政区域、`estat`：統計小地域、`jarl`：JCC/JCG）。
-* **duration**：`end_ts - start_ts` の秒数。`start_ts` または `end_ts` が欠ける場合は `null`。
-
----
-
-## 2. MCP 入出力 I/F（クライアント契約）
-
+## 2. MCP 入出力
 ### 2.1 リクエスト
-
 ```jsonc
 {
-  "granularity": "admin|estat|jarl",   // 省略時は "admin"
-    "stays": [
-    { "ref?": "string<=128", "code": "string", "name": "string", "start_ts?": "RFC3339", "end_ts?": "RFC3339" }
-    ],
-    "mode?": "sequence|aggregate"       // 省略時は "sequence"
-}
-```
-
-* `ref`：任意の参照ラベル。**MCP 内だけで使用**。
-* `mode`：`sequence` は滞在順に、`aggregate` は地区ごとの合計滞在時間をまとめる。
-* `start_ts`/`end_ts`：省略時は `duration` を算出せず `null` を返す。
-
-### 2.2 レスポンス（統一ラップ）
-
-```jsonc
-{
-  "granularity": "admin|estat|jarl",
-  "summary": "string",
-  "results": [
-    { "ref?": "...", "code": "string", "name": "string", "duration_sec?": number }
+  "positions": [
+    {"timestamp": number, "lat": number, "lon": number}
   ],
-    "errors": [
-    { "ref?": "...", "reason": "INVALID_INPUT|INVALID_REF|MISSING_CODE" }
-    ]
+  "params?": {
+    "distance_threshold_m?": number,
+    "duration_threshold_sec?": number
+  }
 }
 ```
+- `positions` は時刻昇順。
+- 閾値を省略した場合、距離 50m・時間 120 秒を採用。
 
-* `summary`：滞在の概略文（例："千代田区に2時間滞在→中央区に30分滞在"）。
-* `results`：入力順を保持し、`duration_sec` は `mode` に応じて算出。
+### 2.2 レスポンス
+```jsonc
+{
+  "results": [
+    {"start_ts": number, "end_ts": number, "center": {"lat": number, "lon": number}, "duration_sec": number}
+  ],
+  "errors": [
+    {"index": number, "reason": "INVALID_COORD|INVALID_TIMESTAMP"}
+  ]
+}
+```
+- `results` は検出順。`center` はクラスタ内の平均座標。
+- 不正サンプルは `errors` に格納し、その他の処理は継続。
 
----
+## 3. 処理フロー
+1. **入力検証**: `timestamp` が単調増加かつ数値であること、`lat`/`lon` が数値であることを確認。
+2. **クラスタリング**: 先頭から順に処理し、距離閾値を超えた時点でクラスタを確定。確定クラスタの滞在時間が閾値未満なら破棄。
+3. **集計**: 採用クラスタから `start_ts`/`end_ts`/`center`/`duration_sec` を算出し `results` に push。
 
-## 3. 集計ロジック（仕様）
-
-1. **入力検証**：`ref` 長さ・文字集合、`code`/`name` の必須確認、時刻形式をチェック。失敗レコードは `errors` に即時格納。
-2. **mode 決定**：省略時 `sequence`。
-3. **滞在整列**：`sequence` は入力順維持、`aggregate` は `code` ごとに合算。
-4. **duration 算出**：時刻が揃っている場合のみ `end_ts - start_ts` を計算。
-5. **要約生成**：`mode` に応じて文章または一覧を組み立て、`summary` に格納。
-
----
-
-## 4. エラー仕様（MCP 側）
-
-| 種別              | 原因                          | 取扱い                           |
-| ----------------- | ----------------------------- | -------------------------------- |
-| `INVALID_INPUT`   | 必須フィールド欠落・時刻形式不正 | 当該レコードを `errors` に格納      |
-| `INVALID_REF`     | 参照ラベルの長さ・文字集合逸脱     | `ref` を無視（必要なら errors へ） |
-| `MISSING_CODE`    | `code` が空または無効           | 当該レコードを `errors` に格納      |
-
-> 備考：エラー発生時も非エラーのレコード処理は継続する。
-
----
+## 4. エラー仕様
+| reason            | 説明                                 |
+|-------------------|--------------------------------------|
+| `INVALID_COORD`   | 緯度経度が数値でない                |
+| `INVALID_TIMESTAMP` | `timestamp` が数値でない、または逆順 |
 
 ## 5. 性能・運用
-
-* 入力規模は数千レコードを想定。メモリ上で完結する同期処理。
-* 要約文生成はテンプレートベースで行い、LLM への委譲は別工程とする。
-* ログには地区コードと滞在時間の統計のみを保存し、個別の時刻は保持しない。
-
+- 入力規模は数千サンプルを想定し、線形アルゴリズムで処理。
+- 位置データは結果にのみ使用し、サーバーには永続保存しない。

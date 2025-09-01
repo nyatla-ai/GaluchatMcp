@@ -85,30 +85,73 @@ class ToolsController
     public function summarizeStays(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
-        [$valid, $errors] = $this->validator->validateSamples($data);
+        [$positions, $errors] = $this->validator->validatePositions($data);
 
-        $stays = [];
-        $parts = [];
-        foreach ($valid as $sample) {
-            $start = new \DateTime($sample['start']);
-            $end = new \DateTime($sample['end']);
-            $duration = (int)floor(($end->getTimestamp() - $start->getTimestamp()) / 60);
-            $stays[] = [
-                'ref' => $sample['ref'],
-                'area' => $sample['area'],
-                'start' => $sample['start'],
-                'end' => $sample['end'],
-                'duration_minutes' => $duration
-            ];
-            $parts[] = sprintf('%sで%d分滞在', $sample['area'], $duration);
+        $params = $data['params'] ?? [];
+        $distTh = isset($params['distance_threshold_m']) ? (float)$params['distance_threshold_m'] : 50.0;
+        $durTh = isset($params['duration_threshold_sec']) ? (int)$params['duration_threshold_sec'] : 120;
+
+        $results = [];
+        $cluster = [];
+        foreach ($positions as $pos) {
+            if (!$cluster) {
+                $cluster[] = $pos;
+                continue;
+            }
+            $prev = $cluster[count($cluster) - 1];
+            $dist = $this->distance($prev['lat'], $prev['lon'], $pos['lat'], $pos['lon']);
+            if ($dist <= $distTh) {
+                $cluster[] = $pos;
+                continue;
+            }
+            $this->finalizeCluster($cluster, $durTh, $results);
+            $cluster = [$pos];
         }
+        $this->finalizeCluster($cluster, $durTh, $results);
 
         $payload = [
-            'summary' => implode('→', $parts),
-            'stays' => $stays,
+            'results' => $results,
             'errors' => $errors
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    private function finalizeCluster(array $cluster, int $durTh, array &$results): void
+    {
+        if (!$cluster) {
+            return;
+        }
+        $start = $cluster[0]['timestamp'];
+        $end = $cluster[count($cluster) - 1]['timestamp'];
+        $duration = $end - $start;
+        if ($duration < $durTh) {
+            return;
+        }
+        $latAvg = array_sum(array_column($cluster, 'lat')) / count($cluster);
+        $lonAvg = array_sum(array_column($cluster, 'lon')) / count($cluster);
+        $results[] = [
+            'start_ts' => $start,
+            'end_ts' => $end,
+            'center' => [
+                'lat' => round($latAvg, 6),
+                'lon' => round($lonAvg, 6)
+            ],
+            'duration_sec' => $duration
+        ];
+    }
+
+    private function distance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $rad = M_PI / 180;
+        $lat1 *= $rad;
+        $lat2 *= $rad;
+        $lon1 *= $rad;
+        $lon2 *= $rad;
+        $dlat = $lat2 - $lat1;
+        $dlon = $lon2 - $lon1;
+        $a = sin($dlat / 2) ** 2 + cos($lat1) * cos($lat2) * sin($dlon / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return 6371000 * $c; // meters
     }
 }
