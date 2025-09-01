@@ -25,7 +25,7 @@ class JsonSchemaMiddleware implements MiddlewareInterface
         $data = $request->getParsedBody();
         if ($data === null) {
             $response = new SlimResponse();
-            $response->getBody()->write(json_encode(Errors::format(Errors::INVALID_ARGUMENT, 'Invalid JSON')));
+            $response->getBody()->write(json_encode(Errors::format(Errors::INVALID_INPUT, 'Invalid JSON')));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
@@ -34,7 +34,7 @@ class JsonSchemaMiddleware implements MiddlewareInterface
         $result = $this->validator->validate($objectData, $schema);
         if (!$result->isValid()) {
             $response = new SlimResponse();
-            $response->getBody()->write(json_encode(Errors::format(Errors::INVALID_ARGUMENT, 'Request does not match schema')));
+            $response->getBody()->write(json_encode(Errors::format(Errors::INVALID_INPUT, 'Request does not match schema')));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
         return $handler->handle($request);

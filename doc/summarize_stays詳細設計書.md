@@ -34,6 +34,12 @@
   - GaluchatAPI が null を返した場合、対応する `code` と `address` も null として返却する。
   - 入力検証または GaluchatAPI 応答で問題が生じた場合は `results` を返さず、`{error:{code,message,location?}}` を返す。
 
+### 2.3 無効サンプルと未解決サンプルの扱い
+- **無効サンプル**: `timestamp` や `lat`/`lon` が数値でない、時系列順でないなど、入力が仕様に合致しない場合。検出した時点で
+  `INVALID_INPUT` エラーを返し、処理を終了する。
+- **未解決サンプル**: 入力は正しいが GaluchatAPI が地区コードを返せない場合。`code` と `address` を `null` に設定したまま処理を
+  続行し、前後のサンプルとは別の滞在として扱う。
+
 ## 3. 処理フロー
 1. **入力検証**: `timestamp` が単調増加かつ数値であること、`lat`/`lon` が数値であることを確認。不正があれば該当サンプルのインデックスを `location` に含めた `INVALID_INPUT` エラーを返し処理を終了する。
 2. **地区コード解決**: 位置サンプルを Galuchat API に送り、対応する地区コードと住所を取得。GaluchatAPI が `null` を返したサンプルは `code` と `address` に `null` を設定する。

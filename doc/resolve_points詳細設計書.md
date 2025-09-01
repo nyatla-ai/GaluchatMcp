@@ -76,6 +76,12 @@
 * `results` は入力点と一対一で対応し、**入力順・件数を保持し、圧縮は行わない**。
 * GaluchatAPI が `null` を返す場合は `code` と `address` を共に `null` として保持する。
 
+### 3.3 無効入力とカバー外の違い
+- **無効入力**: `ref` の長さ超過や `lat`/`lon` が数値でないなど、リクエストの形式が仕様に反する場合。
+  `INVALID_INPUT` エラーを返し、`results` は返さない。
+- **カバー外**: 入力は正しいが GaluchatAPI が地区コードを返さない場合。該当要素の `code` と `address` を `null` に設定して
+  `results` に含める。
+
 ---
 
 ## 4. 設定方式（PHP include）
@@ -143,6 +149,7 @@ return [
 | `API_ERROR`      | GaluchatAPI からの 4xx/5xx 応答              |
 | `RATE_LIMIT`     | HTTP 429（レート制限）                       |
 | `OUT_OF_COVERAGE`| GaluchatAPI 応答の不整合やカバー外           |
+| `INTERNAL`       | サーバー内部エラー                            |
 
 `code` と `address` が同時に `null` の要素はエラーではなく、カバー外結果として `results` にそのまま含める。
 
