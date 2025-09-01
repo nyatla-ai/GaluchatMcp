@@ -71,7 +71,7 @@ Response body:
 ### `POST /tools/summarize_stays`
 Generate stay segments from timestamped position samples. The server resolves
 each position to a region code and groups consecutive samples that share the
-same code, returning stay periods with their codes and durations.
+same code, returning stay periods with their codes, addresses, and durations.
 
 Request body:
 ```json
@@ -91,7 +91,9 @@ Response body:
       "start_ts": 0,
       "end_ts": 60,
       "code": "13101",
-      "duration_sec": 60
+      "address": "東京都千代田区",
+      "duration_sec": 60,
+      "count": 2
     }
   ]
 }
