@@ -12,9 +12,7 @@
         "type": "object",
         "properties": {
           "ref": { "type": "string" },
-          "lat": { "type": "number" },
-          "lon": { "type": "number" },
-          "ok": { "type": "boolean" },
+          "success": { "type": "boolean" },
           "payload": {
             "type": "object",
             "properties": {
@@ -23,30 +21,30 @@
             },
             "required": ["code", "address"],
             "additionalProperties": true
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": ["INVALID_COORD", "API_ERROR", "RATE_LIMIT", "OUT_OF_COVERAGE", "INVALID_REF"]
+              },
+              "message": { "type": "string" }
+            },
+            "required": ["code", "message"],
+            "additionalProperties": false
           }
         },
-        "required": ["lat", "lon", "ok", "payload"],
-        "additionalProperties": false
-      }
-    },
-    "errors": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "ref": { "type": "string" },
-          "lat": { "type": "number" },
-          "lon": { "type": "number" },
-          "reason": {
-            "type": "string",
-            "enum": ["INVALID_COORD", "INVALID_REF", "API_ERROR", "RATE_LIMIT", "OUT_OF_COVERAGE"]
-          }
-        },
-        "required": ["lat", "lon", "reason"],
+        "required": ["success"],
+        "oneOf": [
+          {"required": ["payload"], "properties": {"success": {"const": true}}},
+          {"required": ["error"], "properties": {"success": {"const": false}}}
+        ],
         "additionalProperties": false
       }
     }
   },
-  "required": ["granularity", "results", "errors"],
+  "required": ["granularity", "results"],
   "additionalProperties": false
 }
+

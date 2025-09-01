@@ -24,62 +24,57 @@ class ToolsController
         $granularity = $data['granularity'] ?? 'admin';
         [$valid, $invalid] = $this->validator->validate($data);
 
-        $results = [];
-        $errors = [];
-        try {
-            $apiResults = $this->client->resolve($granularity, $valid);
-        } catch (\RuntimeException $e) {
-            $reason = $e->getMessage();
-            foreach ($valid as $pt) {
-                $errors[] = [
-                    'ref' => $pt['ref'] ?? null,
-                    'lat' => $pt['lat'],
-                    'lon' => $pt['lon'],
-                    'reason' => $reason
-                ];
-            }
-            $apiResults = [];
-        }
+        $total = count($data['points'] ?? []);
+        $results = array_fill(0, $total, null);
 
         foreach ($invalid as $e) {
-            $errors[] = [
-                'ref' => $e['ref'] ?? null,
-                'lat' => $e['lat'],
-                'lon' => $e['lon'],
-                'reason' => $e['reason']
-            ];
+            $results[$e['index']] = $this->errorResult($e['ref'] ?? null, $e['reason']);
         }
 
-        foreach ($valid as $i => $pt) {
-            $apiRes = $apiResults[$i] ?? null;
-            if ($apiRes === null || empty($apiRes['code'])) {
-                $errors[] = [
-                    'ref' => $pt['ref'] ?? null,
-                    'lat' => $pt['lat'],
-                    'lon' => $pt['lon'],
-                    'reason' => Errors::OUT_OF_COVERAGE
-                ];
-                continue;
+        if ($valid) {
+            try {
+                $apiResults = $this->client->resolve($granularity, $valid);
+                foreach ($valid as $i => $pt) {
+                    $apiRes = $apiResults[$i] ?? null;
+                    if ($apiRes === null || empty($apiRes['code'])) {
+                        $results[$pt['index']] = $this->errorResult($pt['ref'] ?? null, Errors::OUT_OF_COVERAGE);
+                        continue;
+                    }
+                    $results[$pt['index']] = [
+                        'ref' => $pt['ref'] ?? null,
+                        'success' => true,
+                        'payload' => [
+                            'code' => $apiRes['code'],
+                            'address' => $apiRes['address']
+                        ]
+                    ];
+                }
+            } catch (\RuntimeException $e) {
+                $reason = $e->getMessage();
+                foreach ($valid as $pt) {
+                    $results[$pt['index']] = $this->errorResult($pt['ref'] ?? null, $reason);
+                }
             }
-            $results[] = [
-                'ref' => $pt['ref'] ?? null,
-                'lat' => $pt['lat'],
-                'lon' => $pt['lon'],
-                'ok' => true,
-                'payload' => [
-                    'code' => $apiRes['code'],
-                    'address' => $apiRes['address']
-                ]
-            ];
         }
 
         $payload = [
             'granularity' => $granularity,
-            'results' => $results,
-            'errors' => $errors
+            'results' => array_values($results)
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    private function errorResult(?string $ref, string $code): array
+    {
+        return [
+            'ref' => $ref,
+            'success' => false,
+            'error' => [
+                'code' => $code,
+                'message' => $code
+            ]
+        ];
     }
 
     public function summarizeStays(Request $request, Response $response): Response

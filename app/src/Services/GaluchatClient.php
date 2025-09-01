@@ -24,7 +24,8 @@ class GaluchatClient
         $timeout = ($config['timeout_ms'] ?? 10000) / 1000;
         $this->http = new Client([
             'base_uri' => rtrim($baseUrl, '/'),
-            'timeout' => $timeout
+            'timeout' => $timeout,
+            'http_errors' => false
         ]);
     }
 

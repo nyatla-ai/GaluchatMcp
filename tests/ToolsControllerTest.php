@@ -45,8 +45,9 @@ class ToolsControllerTest extends TestCase
         $response = $app->handle($request);
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode((string)$response->getBody(), true);
+        $this->assertArrayNotHasKey('errors', $data);
         $this->assertCount(2, $data['results']);
-        $this->assertEmpty($data['errors']);
+        $this->assertTrue($data['results'][0]['success']);
         $this->assertSame('13101', $data['results'][0]['payload']['code']);
     }
 }
