@@ -20,7 +20,7 @@ class ToolsControllerTest extends TestCase
         $app->addBodyParsingMiddleware();
         $schema = __DIR__ . '/../app/resources/schema/resolve_points.input.json';
         $app->post('/tools/resolve_points', [$controller, 'resolvePoints'])
-            ->add(new RateLimitMiddleware(5))
+            ->add(new RateLimitMiddleware(100))
             ->add(new JsonSchemaMiddleware($schema));
         return $app;
     }
@@ -72,5 +72,33 @@ class ToolsControllerTest extends TestCase
         $this->assertArrayNotHasKey('error', $data);
         $this->assertNull($data['results'][0]['code']);
         $this->assertNull($data['results'][0]['address']);
+    }
+
+    public function testResolvePointsAllowsEmptyAndNullRef(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willReturn([
+            ['code' => 'A', 'address' => 'X'],
+            ['code' => 'B', 'address' => 'Y'],
+            ['code' => 'C', 'address' => 'Z']
+        ]);
+        $app = $this->createApp($client);
+        $payload = [
+            'points' => [
+                ['ref' => '', 'lat' => 35.0, 'lon' => 135.0],
+                ['lat' => 36.0, 'lon' => 136.0],
+                ['ref' => null, 'lat' => 37.0, 'lon' => 137.0]
+            ]
+        ];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/resolve_points')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertArrayNotHasKey('error', $data);
+        $this->assertCount(3, $data['results']);
+        $this->assertSame('', $data['results'][0]['ref']);
+        $this->assertNull($data['results'][1]['ref']);
+        $this->assertNull($data['results'][2]['ref']);
     }
 }

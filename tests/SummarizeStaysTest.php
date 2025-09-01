@@ -21,7 +21,7 @@ class SummarizeStaysTest extends TestCase
         $app->addBodyParsingMiddleware();
         $schema = __DIR__ . '/../app/resources/schema/summarize_stays.input.json';
         $app->post('/tools/summarize_stays', [$controller, 'summarizeStays'])
-            ->add(new RateLimitMiddleware(5))
+            ->add(new RateLimitMiddleware(100))
             ->add(new JsonSchemaMiddleware($schema));
         return $app;
     }

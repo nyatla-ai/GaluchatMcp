@@ -36,7 +36,8 @@ Returns manifest describing available tools.
 ### `POST /tools/resolve_points`
 Resolve points to district codes. Each input point yields an element in
 `results`, preserving order. Entries contain the original `ref` (if any), along
-with the resolved `code` and `address` (both may be `null`).
+with the resolved `code` and `address` (both may be `null`). The `ref` field
+itself is optional and may be omitted or set to an empty string or `null`.
 
 Request body:
 ```json
