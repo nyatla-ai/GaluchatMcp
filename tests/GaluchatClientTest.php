@@ -18,8 +18,7 @@ class GaluchatClientTest extends TestCase
                 'admin' => 'a',
                 'estat' => 'e',
                 'jarl' => 'j'
-            ],
-            'unit' => 1.0
+            ]
         ];
         $client = new GaluchatClient($config);
         $mock = new MockHandler($responses);
@@ -40,8 +39,7 @@ class GaluchatClientTest extends TestCase
                 'admin' => 'a',
                 'estat' => 'e',
                 'jarl' => 'j'
-            ],
-            'unit' => 1.0
+            ]
         ];
         $client = new GaluchatClient($config);
         $this->assertInstanceOf(GaluchatClient::class, $client);
@@ -66,8 +64,7 @@ class GaluchatClientTest extends TestCase
                 'admin' => 'a',
                 'estat' => 'e',
                 'jarl' => 'j'
-            ],
-            'unit' => 1.0
+            ]
         ];
         return [
             'missing base_url' => [array_diff_key($base, ['base_url' => true])],
@@ -79,8 +76,6 @@ class GaluchatClientTest extends TestCase
             'mapsets missing estat' => [array_merge($base, ['mapsets' => ['admin' => 'a', 'jarl' => 'j']])],
             'mapsets missing jarl' => [array_merge($base, ['mapsets' => ['admin' => 'a', 'estat' => 'e']])],
             'mapsets admin not string' => [array_merge($base, ['mapsets' => ['admin' => 1, 'estat' => 'e', 'jarl' => 'j']])],
-            'missing unit' => [array_diff_key($base, ['unit' => true])],
-            'unit not numeric' => [array_merge($base, ['unit' => 'abc'])],
         ];
     }
 

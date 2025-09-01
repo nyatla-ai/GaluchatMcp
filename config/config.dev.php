@@ -7,8 +7,7 @@ return [
             'admin' => 'ma10000',
             'estat' => 'estatremap10000',
             'jarl' => 'ma10000'
-        ],
-        'unit' => 0.001
+        ]
     ],
     'resolve_points' => [
         'max_points' => 10000

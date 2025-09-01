@@ -10,7 +10,7 @@
 * **外部API**：GaluchatAPI（逆ジオ系・画像系）。本機能で直接利用するのは **逆ジオ系 API**。
 * **granularity**：返却コードの種類（`admin`：行政区域、`estat`：統計小地域、`jarl`：JCC/JCG）。
 * **mapset**：GaluchatAPI のデータ版・解像度セット。**API の URL クエリパラメータ**として指定可（値は GaluchatAPI 側で定義）。
-* **unit**：GaluchatAPI の整数座標スケーリング係数（API 仕様）。
+* **unit**：GaluchatAPI の座標スケーリング係数。現在は **1 に固定**。
 * **入力点数上限**：デフォルトで約 10,000 点（設定で変更可）。
 
 ---
@@ -31,13 +31,13 @@
 
 ```jsonc
 {
-  "unit": <number>,
-  "points": [ [<lon_int>, <lat_int>], ... ]
+  "unit": 1,
+  "points": [ [<lon>, <lat>], ... ]
 }
 ```
 
-* `points` は **\[経度, 緯度] の整数ペア配列**。
-* `unit` は **度→整数** のスケール（例：`0.001` なら `lon_int = round(lon / 0.001)`）。
+* `points` は **\[経度, 緯度] の数値ペア配列**。整数・小数をそのまま渡す。
+* `unit` は **常に 1**（スケーリングなし）。
 * `mapset` は **API 側で定義済みの識別子**（granularity に適合するものを指定）で、URL クエリ `?mapset=` として渡す。
 
 > 注意：各 API が受け付ける `mapset` の種類（AACODE/ESCODE 等）は **GaluchatAPI 仕様の制約に従う**。MCP は **granularity ごとに適合した mapset** のみを URL クエリとして付加する。
@@ -105,8 +105,7 @@ return [
     'admin' => 'ma10000',          // AACODE系（/raacs, /rjccs）
     'estat' => 'estatremap10000',  // ESCODE系（/resareas）
     'jarl'  => 'ma10000'           // AACODE系（/rjccs）
-  ],
-  'unit'       => 0.001            // GaluchatAPI の unit（度→整数）
+  ]
   ],
   'resolve_points' => [
     'max_points' => 10000          // リクエストあたりの入力点上限
@@ -132,11 +131,11 @@ return [
 
 1. **入力検証**：全点について `ref` 長さ・文字集合、および `lat/lon` の数値範囲を確認。いずれかが不正な場合は該当要素のインデックスまたは `ref` を `location` に含めた `INVALID_INPUT` エラーを返し処理を中断する。
 2. **granularity 決定**：省略時 `admin`。
- 3. **設定読込**：`base_url`、`mapset[granularity]`、`unit` を取得。
+ 3. **設定読込**：`base_url`、`mapset[granularity]` を取得。
  4. **リクエスト構築**：
 
-     * `unit` をボディに付与。
-     * `points` は `[ round(lon/unit), round(lat/unit) ]` 整数ペア列。
+     * `unit` は常に `1` をボディに付与。
+     * `points` は `[ lon, lat ]` の数値ペア列。
      * `mapset` はクエリパラメータとして URL に付加。
 5. **API 呼び出し**：エンドポイントは granularity に応じて `/raacs`、`/resareas`、`/rjccs`。`mapset` を含む URL へ POST し、タイムアウトは設定値。
 6. **エラー処理**：
@@ -175,9 +174,8 @@ return [
 
 1. **API切替**：`granularity` ごとに正しいエンドポイントへ送信される。
 2. **mapset透過**：設定の `mapset` が URL クエリに正しく付加される（admin/jarl=AACODE、estat=ESCODE）。
-3. **unit丸め**：境界近傍の丸め誤差でも逆転しない（許容差の定義）。
-4. **レート超過**：429 を受けた場合に `RATE_LIMIT` エラー応答になる。
-5. **件数保持**：同一地点が続く場合でも結果数が入力数と一致する。
+3. **レート超過**：429 を受けた場合に `RATE_LIMIT` エラー応答になる。
+4. **件数保持**：同一地点が続く場合でも結果数が入力数と一致する。
 
 
 ---
@@ -217,8 +215,8 @@ return [
 
 ```jsonc
 {
-  "unit": 0.001,
-  "points": [ [139760, 35683], [139692, 35690], [0, 0] ]
+  "unit": 1,
+  "points": [ [139.75945, 35.68283], [139.6917, 35.6895], [0.0, 0.0] ]
 }
 ```
 
