@@ -72,6 +72,8 @@ Response body:
 Generate stay segments from timestamped position samples. The server resolves
 each position to a region code and groups consecutive samples that share the
 same code, returning stay periods with their codes, addresses, and durations.
+Samples whose district codes cannot be resolved have `code` and `address`
+set to `null`, and stays split around these unresolved samples.
 
 Request body:
 ```json
@@ -99,14 +101,21 @@ Response body:
 }
 ```
 
-Invalid position samples are ignored and omitted from the results.
+### Invalid vs unresolvable samples
+These rules apply to both `resolve_points` and `summarize_stays`:
+- **Invalid sample**: the position object itself is malformed (e.g. missing
+  fields or non-numeric coordinates). The server stops processing and returns
+  an `INVALID_INPUT` error without any `results`.
+- **Unresolvable sample**: the sample is valid but Galuchat cannot resolve a
+  district. The response still includes the sample, with its `code` and
+  `address` set to `null`, and other samples are processed normally.
 
 ## Error model
 
 ```
 {
   "error": {
-    "code": "INVALID_ARGUMENT|OUT_OF_RANGE|RATE_LIMIT|INTERNAL",
+    "code": "INVALID_INPUT|API_ERROR|OUT_OF_COVERAGE|RATE_LIMIT|INTERNAL",
     "message": "..."
   }
 }

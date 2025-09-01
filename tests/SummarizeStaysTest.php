@@ -82,7 +82,7 @@ class SummarizeStaysTest extends TestCase
         $data = json_decode((string)$response->getBody(), true);
         $this->assertArrayHasKey('error', $data);
         $this->assertSame('INVALID_INPUT', $data['error']['code']);
-        $this->assertSame('INVALID_TIMESTAMP', $data['error']['message']);
+        $this->assertSame('Invalid timestamp', $data['error']['message']);
     }
 
     public function testSummarizeStaysNullCode(): void

@@ -3,14 +3,11 @@ namespace App\Domain;
 
 final class Errors
 {
-    public const INVALID_COORD = 'INVALID_COORD';
-    public const INVALID_REF = 'INVALID_REF';
     public const INVALID_INPUT = 'INVALID_INPUT';
-    public const INVALID_TIMESTAMP = 'INVALID_TIMESTAMP';
-    public const INVALID_ARGUMENT = 'INVALID_ARGUMENT';
     public const API_ERROR = 'API_ERROR';
-    public const RATE_LIMIT = 'RATE_LIMIT';
     public const OUT_OF_COVERAGE = 'OUT_OF_COVERAGE';
+    public const RATE_LIMIT = 'RATE_LIMIT';
+    public const INTERNAL = 'INTERNAL';
 
     public static function format(string $code, string $message): array
     {

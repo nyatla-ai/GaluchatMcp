@@ -19,7 +19,7 @@ class InputValidator
             $lon = $pt['lon'] ?? null;
             $ref = $pt['ref'] ?? null;
             if (!is_numeric($lat) || !is_numeric($lon)) {
-                throw new InvalidInputException(Errors::INVALID_COORD, [
+                throw new InvalidInputException('Invalid coordinate', [
                     'index' => $index,
                     'ref' => $ref,
                     'lat' => $lat,
@@ -27,7 +27,7 @@ class InputValidator
                 ]);
             }
             if ($ref !== null && !preg_match('/^[A-Za-z0-9._:-]{1,128}$/', $ref)) {
-                throw new InvalidInputException(Errors::INVALID_REF, [
+                throw new InvalidInputException('Invalid ref', [
                     'index' => $index,
                     'ref' => $ref
                 ]);
@@ -60,13 +60,13 @@ class InputValidator
             $lon = $pos['lon'] ?? null;
 
             if (!is_numeric($ts)) {
-                throw new InvalidInputException(Errors::INVALID_TIMESTAMP, ['index' => $index]);
+                throw new InvalidInputException('Invalid timestamp', ['index' => $index]);
             }
             if ($prevTs !== null && $ts < $prevTs) {
-                throw new InvalidInputException(Errors::INVALID_TIMESTAMP, ['index' => $index]);
+                throw new InvalidInputException('Invalid timestamp', ['index' => $index]);
             }
             if (!is_numeric($lat) || !is_numeric($lon)) {
-                throw new InvalidInputException(Errors::INVALID_COORD, ['index' => $index]);
+                throw new InvalidInputException('Invalid coordinate', ['index' => $index]);
             }
 
             $valid[] = [
