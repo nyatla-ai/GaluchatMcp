@@ -11,35 +11,19 @@
       "items": {
         "type": "object",
         "properties": {
-          "ref": { "type": "string" },
-          "success": { "type": "boolean" },
+          "ref": { "type": ["string", "null"] },
+          "success": { "const": true },
           "payload": {
             "type": "object",
             "properties": {
-              "code": { "type": "string" },
-              "address": { "type": "string" }
+              "code": { "type": ["string", "null"] },
+              "address": { "type": ["string", "null"] }
             },
             "required": ["code", "address"],
             "additionalProperties": true
-          },
-          "error": {
-            "type": "object",
-            "properties": {
-              "code": {
-                "type": "string",
-                "enum": ["INVALID_COORD", "API_ERROR", "RATE_LIMIT", "OUT_OF_COVERAGE", "INVALID_REF"]
-              },
-              "message": { "type": "string" }
-            },
-            "required": ["code", "message"],
-            "additionalProperties": false
           }
         },
-        "required": ["success"],
-        "oneOf": [
-          {"required": ["payload"], "properties": {"success": {"const": true}}},
-          {"required": ["error"], "properties": {"success": {"const": false}}}
-        ],
+        "required": ["success", "payload"],
         "additionalProperties": false
       }
     }

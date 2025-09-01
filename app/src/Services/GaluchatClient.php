@@ -65,7 +65,10 @@ class GaluchatClient
             throw new \RuntimeException(Errors::API_ERROR);
         }
         $data = json_decode((string)$resp->getBody(), true);
-        $codes = $data['codes'] ?? [];
+        if (!is_array($data) || !isset($data['codes']) || !is_array($data['codes'])) {
+            throw new \RuntimeException(Errors::API_ERROR);
+        }
+        $codes = $data['codes'];
         $addresses = $data['addresses'] ?? [];
         $results = [];
         foreach ($codes as $i => $code) {
