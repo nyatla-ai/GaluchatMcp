@@ -32,8 +32,8 @@ foreach (['base_url', 'mapsets', 'unit'] as $k) {
 
 $app = AppFactory::create();
 $app->addBodyParsingMiddleware();
-
-$validator = new InputValidator();
+$maxPoints = $config['resolve_points']['max_points'] ?? 10000;
+$validator = new InputValidator($maxPoints);
 $client = new GaluchatClient($config['galuchat']);
 $tools = new ToolsController($validator, $client);
 $mcp = new McpController();

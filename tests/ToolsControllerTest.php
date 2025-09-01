@@ -13,9 +13,9 @@ use App\Domain\Errors;
 
 class ToolsControllerTest extends TestCase
 {
-    private function createApp($client): \Slim\App
+    private function createApp($client, int $maxPoints = 10000): \Slim\App
     {
-        $validator = new InputValidator();
+        $validator = new InputValidator($maxPoints);
         $controller = new ToolsController($validator, $client);
         $app = AppFactory::create();
         $app->addBodyParsingMiddleware();
@@ -139,5 +139,24 @@ class ToolsControllerTest extends TestCase
         $data = json_decode((string)$response->getBody(), true);
         $this->assertSame('OUT_OF_COVERAGE', $data['error']['code']);
         $this->assertSame('OUT_OF_COVERAGE', $data['error']['message']);
+    }
+
+    public function testResolvePointsTooManyPoints(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $app = $this->createApp($client, 1);
+        $payload = [
+            'points' => [
+                ['lat' => 35.0, 'lon' => 135.0],
+                ['lat' => 36.0, 'lon' => 136.0]
+            ]
+        ];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/resolve_points')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertSame('INVALID_INPUT', $data['error']['code']);
+        $this->assertSame('Too many points', $data['error']['message']);
     }
 }

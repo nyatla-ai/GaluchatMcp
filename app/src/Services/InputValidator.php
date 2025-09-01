@@ -6,6 +6,13 @@ use App\Domain\InvalidInputException;
 
 class InputValidator
 {
+    private int $maxPoints;
+
+    public function __construct(int $maxPoints = 10000)
+    {
+        $this->maxPoints = $maxPoints;
+    }
+
     /**
      * @param array $data
      * @return array valid points
@@ -13,6 +20,10 @@ class InputValidator
      */
     public function validate(array $data): array
     {
+        if (count($data['points']) > $this->maxPoints) {
+            throw new InvalidInputException('Too many points', ['max' => $this->maxPoints]);
+        }
+
         $valid = [];
         foreach ($data['points'] as $index => $pt) {
             $lat = $pt['lat'] ?? null;

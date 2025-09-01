@@ -9,5 +9,8 @@ return [
             'jarl' => 'ma10000'
         ],
         'unit' => 0.001
+    ],
+    'resolve_points' => [
+        'max_points' => 10000
     ]
 ];
