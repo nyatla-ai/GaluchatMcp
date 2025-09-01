@@ -86,6 +86,30 @@ class SummarizeStaysTest extends TestCase
         $this->assertSame('Invalid timestamp', $data['error']['message']);
     }
 
+    public function testSummarizeStaysHighPrecisionInput(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willReturn([
+            ['code' => 'A', 'address' => 'AA']
+        ]);
+        $app = $this->createApp($client);
+        $payload = [
+            'positions' => [
+                ['timestamp' => 0, 'lat' => 35.1234567, 'lon' => 135.7654321]
+            ]
+        ];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/summarize_stays')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertArrayNotHasKey('error', $data);
+        $this->assertSame('A', $data['results'][0]['code']);
+        $this->assertSame('AA', $data['results'][0]['address']);
+        $this->assertSame(0, $data['results'][0]['duration_sec']);
+        $this->assertSame(1, $data['results'][0]['count']);
+    }
+
     public function testSummarizeStaysNullCode(): void
     {
         $client = $this->createMock(GaluchatClient::class);
