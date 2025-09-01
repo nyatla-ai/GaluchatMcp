@@ -15,7 +15,7 @@
           "code": { "type": ["string", "null"] },
           "address": { "type": ["string", "null"] }
         },
-        "required": ["ref", "code", "address"],
+        "required": ["code", "address"],
         "additionalProperties": false
       }
     }

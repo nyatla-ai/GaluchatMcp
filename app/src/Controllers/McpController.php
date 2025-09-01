@@ -33,7 +33,6 @@ class McpController
                         'granularity' => 'admin',
                         'results' => [
                             [
-                                'ref' => null,
                                 'code' => '00000',
                                 'address' => 'Example'
                             ]

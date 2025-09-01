@@ -73,6 +73,7 @@
 
 * `results` は全点が成功した場合のみ返却する。1点でもエラーが発生した場合は `results` を返さず、`{"error": {"code", "message", "location?"}}` 形式の単一エラー応答となる。
 * `lat` と `lon` は出力に含めない。入力の `ref` または配列順で照合する。
+* `ref` が入力に存在する場合のみ各要素に含める。省略された場合は対応する要素から `ref` を省略する。
 * `results` は入力点と一対一で対応し、**入力順・件数を保持し、圧縮は行わない**。
 * GaluchatAPI が `null` を返す場合は `code` と `address` を共に `null` として保持する。
 
@@ -201,7 +202,7 @@ return [
   "granularity": "admin",
   "points": [
     { "ref": "p1", "lat": 35.68283, "lon": 139.75945 },
-    { "ref": "p2", "lat": 35.6895,  "lon": 139.6917 },
+    { "lat": 35.6895,  "lon": 139.6917 },
     { "ref": "p3", "lat": 0.0,      "lon": 0.0 }
   ]
 }
@@ -235,7 +236,7 @@ return [
   "granularity": "admin",
   "results": [
     { "ref": "p1", "code": "131010001", "address": "東京都千代田区" },
-    { "ref": "p2", "code": "131040001", "address": "東京都新宿区" },
+    { "code": "131040001", "address": "東京都新宿区" },
     { "ref": "p3", "code": null, "address": null }
   ]
 }
