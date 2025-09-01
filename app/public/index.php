@@ -24,7 +24,7 @@ if (!file_exists($configFile)) {
     throw new RuntimeException("missing config file: $configFile");
 }
 $config = include $configFile;
-foreach (['base_url', 'mapsets', 'unit'] as $k) {
+foreach (['base_url', 'mapsets'] as $k) {
     if (!isset($config['galuchat'][$k])) {
         throw new RuntimeException("config missing galuchat.$k");
     }

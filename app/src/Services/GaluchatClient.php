@@ -9,7 +9,6 @@ class GaluchatClient
 {
     private Client $http;
     private array $mapsets;
-    private float $unit;
     private array $paths = [
         'admin' => '/raacs',
         'estat' => '/resareas',
@@ -32,11 +31,7 @@ class GaluchatClient
                 throw new \RuntimeException('INVALID_CONFIG');
             }
         }
-        if (!isset($config['unit']) || !is_numeric($config['unit'])) {
-            throw new \RuntimeException('INVALID_CONFIG');
-        }
         $this->mapsets = $config['mapsets'];
-        $this->unit = (float)$config['unit'];
         $baseUrl = $config['base_url'];
         $timeout = $config['timeout_ms'] / 1000;
         $this->http = new Client([
@@ -59,11 +54,9 @@ class GaluchatClient
         $path = $this->paths[$granularity] ?? $this->paths['admin'];
         $mapset = $this->mapsets[$granularity] ?? '';
         $body = [
-            'unit' => $this->unit,
+            'unit' => 1,
             'points' => array_map(function ($p) {
-                $lon = (int)round($p['lon'] / $this->unit);
-                $lat = (int)round($p['lat'] / $this->unit);
-                return [$lon, $lat];
+                return [$p['lon'], $p['lat']];
             }, $points)
         ];
         try {
