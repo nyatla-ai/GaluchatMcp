@@ -82,27 +82,71 @@ class ToolsController
         $data = $request->getParsedBody();
         [$positions, $errors] = $this->validator->validatePositions($data);
 
-        $params = $data['params'] ?? [];
-        $distTh = isset($params['distance_threshold_m']) ? (float)$params['distance_threshold_m'] : 50.0;
-        $durTh = isset($params['duration_threshold_sec']) ? (int)$params['duration_threshold_sec'] : 120;
-
         $results = [];
-        $cluster = [];
-        foreach ($positions as $pos) {
-            if (!$cluster) {
-                $cluster[] = $pos;
-                continue;
+
+        if ($positions) {
+            try {
+                $apiResults = $this->client->resolve('admin', $positions);
+                $clusterCode = null;
+                $clusterStart = null;
+                $clusterCount = 0;
+                foreach ($positions as $i => $pos) {
+                    $code = $apiResults[$i]['code'] ?? null;
+                    if (!$code) {
+                        if ($clusterCount >= 2) {
+                            $endTs = $positions[$i - 1]['timestamp'];
+                            $results[] = [
+                                'start_ts' => $clusterStart,
+                                'end_ts' => $endTs,
+                                'code' => $clusterCode,
+                                'duration_sec' => $endTs - $clusterStart
+                            ];
+                        }
+                        $clusterCode = null;
+                        $clusterStart = null;
+                        $clusterCount = 0;
+                        $errors[] = ['index' => $i, 'reason' => Errors::OUT_OF_COVERAGE];
+                        continue;
+                    }
+                    if ($clusterCode === null) {
+                        $clusterCode = $code;
+                        $clusterStart = $pos['timestamp'];
+                        $clusterCount = 1;
+                        continue;
+                    }
+                    if ($code === $clusterCode) {
+                        $clusterCount++;
+                        continue;
+                    }
+                    if ($clusterCount >= 2) {
+                        $endTs = $positions[$i - 1]['timestamp'];
+                        $results[] = [
+                            'start_ts' => $clusterStart,
+                            'end_ts' => $endTs,
+                            'code' => $clusterCode,
+                            'duration_sec' => $endTs - $clusterStart
+                        ];
+                    }
+                    $clusterCode = $code;
+                    $clusterStart = $pos['timestamp'];
+                    $clusterCount = 1;
+                }
+                if ($clusterCount >= 2) {
+                    $endTs = $positions[count($positions) - 1]['timestamp'];
+                    $results[] = [
+                        'start_ts' => $clusterStart,
+                        'end_ts' => $endTs,
+                        'code' => $clusterCode,
+                        'duration_sec' => $endTs - $clusterStart
+                    ];
+                }
+            } catch (\RuntimeException $e) {
+                $reason = $e->getMessage();
+                foreach ($positions as $i => $_) {
+                    $errors[] = ['index' => $i, 'reason' => $reason];
+                }
             }
-            $prev = $cluster[count($cluster) - 1];
-            $dist = $this->distance($prev['lat'], $prev['lon'], $pos['lat'], $pos['lon']);
-            if ($dist <= $distTh) {
-                $cluster[] = $pos;
-                continue;
-            }
-            $this->finalizeCluster($cluster, $durTh, $results);
-            $cluster = [$pos];
         }
-        $this->finalizeCluster($cluster, $durTh, $results);
 
         $payload = [
             'results' => $results,
@@ -110,43 +154,5 @@ class ToolsController
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    private function finalizeCluster(array $cluster, int $durTh, array &$results): void
-    {
-        if (!$cluster) {
-            return;
-        }
-        $start = $cluster[0]['timestamp'];
-        $end = $cluster[count($cluster) - 1]['timestamp'];
-        $duration = $end - $start;
-        if ($duration < $durTh) {
-            return;
-        }
-        $latAvg = array_sum(array_column($cluster, 'lat')) / count($cluster);
-        $lonAvg = array_sum(array_column($cluster, 'lon')) / count($cluster);
-        $results[] = [
-            'start_ts' => $start,
-            'end_ts' => $end,
-            'center' => [
-                'lat' => round($latAvg, 6),
-                'lon' => round($lonAvg, 6)
-            ],
-            'duration_sec' => $duration
-        ];
-    }
-
-    private function distance(float $lat1, float $lon1, float $lat2, float $lon2): float
-    {
-        $rad = M_PI / 180;
-        $lat1 *= $rad;
-        $lat2 *= $rad;
-        $lon1 *= $rad;
-        $lon2 *= $rad;
-        $dlat = $lat2 - $lat1;
-        $dlon = $lon2 - $lon1;
-        $a = sin($dlat / 2) ** 2 + cos($lat1) * cos($lat2) * sin($dlon / 2) ** 2;
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        return 6371000 * $c; // meters
     }
 }

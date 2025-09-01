@@ -16,14 +16,6 @@
         "required": ["timestamp", "lat", "lon"],
         "additionalProperties": false
       }
-    },
-    "params": {
-      "type": "object",
-      "properties": {
-        "distance_threshold_m": {"type": "number"},
-        "duration_threshold_sec": {"type": "number"}
-      },
-      "additionalProperties": false
     }
   },
   "required": ["positions"],

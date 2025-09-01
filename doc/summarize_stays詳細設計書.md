@@ -2,8 +2,7 @@
 
 ## 1. スコープと用語
 - **position**: 単一観測点 `{timestamp, lat, lon}`。時刻は秒単位の数値。
-- **stay**: 連続した position のクラスタから得られる滞在区間。`start_ts`, `end_ts`, `center`, `duration_sec` を持つ。
-- **params**: 閾値設定。`distance_threshold_m` はクラスタ判定距離、`duration_threshold_sec` は採用最小滞在時間。
+- **stay**: 連続した position が同一の地区コードに属する区間。`start_ts`, `end_ts`, `code`, `duration_sec` を持つ。
 
 ## 2. MCP 入出力
 ### 2.1 リクエスト
@@ -11,31 +10,27 @@
 {
   "positions": [
     {"timestamp": number, "lat": number, "lon": number}
-  ],
-  "params?": {
-    "distance_threshold_m?": number,
-    "duration_threshold_sec?": number
-  }
+  ]
 }
 ```
 - `positions` は時刻昇順。
-- 閾値を省略した場合、距離 50m・時間 120 秒を採用。
 
 ### 2.2 レスポンス
 ```jsonc
 {
   "results": [
-    {"start_ts": number, "end_ts": number, "center": {"lat": number, "lon": number}, "duration_sec": number}
+    {"start_ts": number, "end_ts": number, "code": string, "duration_sec": number}
   ]
 }
 ```
-- `results` は検出順。`center` はクラスタ内の平均座標。
+- `results` は検出順。`code` は地区コード。
 - 無効サンプルは出力に含めず処理を継続する。
 
 ## 3. 処理フロー
 1. **入力検証**: `timestamp` が単調増加かつ数値であること、`lat`/`lon` が数値であることを確認。
-2. **クラスタリング**: 先頭から順に処理し、距離閾値を超えた時点でクラスタを確定。確定クラスタの滞在時間が閾値未満なら破棄。
-3. **集計**: 採用クラスタから `start_ts`/`end_ts`/`center`/`duration_sec` を算出し `results` に push。
+2. **地区コード解決**: 位置サンプルを Galuchat API に送り、対応する地区コードを取得。
+3. **クラスタリング**: 連続して同じコードが続く区間を滞在として確定。2サンプル未満の区間は破棄。
+4. **集計**: 採用クラスタから `start_ts`/`end_ts`/`code`/`duration_sec` を算出し `results` に push。
 
 ## 4. 無効サンプルの扱い
 | reason            | 説明                                 |
