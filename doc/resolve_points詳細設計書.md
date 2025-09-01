@@ -51,12 +51,12 @@
 {
   "granularity": "admin|estat|jarl",   // 省略時は "admin"
     "points": [
-    { "ref?": "string<=128", "lat": number, "lon": number }
+    { "ref?": "string|null<=128", "lat": number, "lon": number }
     ]
 }
 ```
 
-* `ref`：任意の参照ラベル。**MCP 内だけで使用**。API には送らない。
+* `ref`：任意の参照ラベル。**MCP 内だけで使用**。空文字や `null` を許容し、API には送らない。
 * 座標系：WGS84。**有効範囲は GaluchatAPI が判定する**。
 * 入力点数：制限なし（API が許容する範囲）。
 
@@ -66,7 +66,7 @@
 {
   "granularity": "admin|estat|jarl",
   "results": [
-    { "ref?": "...", "code": "string|null", "address": "string|null" }
+    { "ref?": "string|null", "code": "string|null", "address": "string|null" }
   ]
 }
 ```

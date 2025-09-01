@@ -26,7 +26,7 @@ class InputValidator
                     'lon' => $lon
                 ]);
             }
-            if ($ref !== null && !preg_match('/^[A-Za-z0-9._:-]{1,128}$/', $ref)) {
+            if ($ref !== null && !preg_match('/^[A-Za-z0-9._:-]{0,128}$/', $ref)) {
                 throw new InvalidInputException('Invalid ref', [
                     'index' => $index,
                     'ref' => $ref
