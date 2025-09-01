@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Services\InputValidator;
 use App\Services\GaluchatClient;
 use App\Domain\Errors;
+use App\Domain\InvalidInputException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 
@@ -22,117 +23,73 @@ class ToolsController
     {
         $data = $request->getParsedBody();
         $granularity = $data['granularity'] ?? 'admin';
-        [$valid, $invalid] = $this->validator->validate($data);
-
-        $total = count($data['points'] ?? []);
-        $results = array_fill(0, $total, null);
-
-        foreach ($invalid as $e) {
-            $results[$e['index']] = $this->errorResult($e['ref'] ?? null, $e['reason']);
+        try {
+            $valid = $this->validator->validate($data);
+        } catch (InvalidInputException $e) {
+            return $this->errorResponse($response, Errors::INVALID_INPUT, $e->getMessage(), $e->getLocation());
         }
 
-        if ($valid) {
-            try {
-                $apiResults = $this->client->resolve($granularity, $valid);
-                foreach ($valid as $i => $pt) {
-                    $apiRes = $apiResults[$i] ?? null;
-                    if ($apiRes === null || empty($apiRes['code'])) {
-                        $results[$pt['index']] = $this->errorResult($pt['ref'] ?? null, Errors::OUT_OF_COVERAGE);
-                        continue;
-                    }
-                    $results[$pt['index']] = [
-                        'ref' => $pt['ref'] ?? null,
-                        'success' => true,
-                        'payload' => [
-                            'code' => $apiRes['code'],
-                            'address' => $apiRes['address']
-                        ]
-                    ];
-                }
-            } catch (\RuntimeException $e) {
-                $reason = $e->getMessage();
-                foreach ($valid as $pt) {
-                    $results[$pt['index']] = $this->errorResult($pt['ref'] ?? null, $reason);
-                }
+        try {
+            $apiResults = $this->client->resolve($granularity, $valid);
+        } catch (\RuntimeException $e) {
+            return $this->errorResponse($response, Errors::API_ERROR, $e->getMessage());
+        }
+
+        $results = [];
+        foreach ($valid as $i => $pt) {
+            $apiRes = $apiResults[$i] ?? null;
+            if ($apiRes === null) {
+                return $this->errorResponse($response, Errors::OUT_OF_COVERAGE, Errors::OUT_OF_COVERAGE, [
+                    'index' => $pt['index'],
+                    'ref' => $pt['ref'] ?? null
+                ]);
             }
+            $results[] = [
+                'ref' => $pt['ref'] ?? null,
+                'success' => true,
+                'payload' => [
+                    'code' => $apiRes['code'] ?? null,
+                    'address' => $apiRes['address'] ?? null
+                ]
+            ];
         }
 
         $payload = [
             'granularity' => $granularity,
-            'results' => array_values($results)
+            'results' => $results
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    private function errorResult(?string $ref, string $code): array
-    {
-        return [
-            'ref' => $ref,
-            'success' => false,
-            'error' => [
-                'code' => $code,
-                'message' => $code
-            ]
-        ];
-    }
-
     public function summarizeStays(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
-        [$positions, $errors] = $this->validator->validatePositions($data);
+        try {
+            $positions = $this->validator->validatePositions($data);
+        } catch (InvalidInputException $e) {
+            return $this->errorResponse($response, Errors::INVALID_INPUT, $e->getMessage(), $e->getLocation());
+        }
+
+        try {
+            $apiResults = $this->client->resolve('admin', $positions);
+        } catch (\RuntimeException $e) {
+            return $this->errorResponse($response, Errors::API_ERROR, $e->getMessage());
+        }
 
         $results = [];
-
-        if ($positions) {
-            try {
-                $apiResults = $this->client->resolve('admin', $positions);
-                $clusterCode = null;
-                $clusterStart = null;
-                $clusterCount = 0;
-                foreach ($positions as $i => $pos) {
-                    $code = $apiResults[$i]['code'] ?? null;
-                    if (!$code) {
-                        if ($clusterCount >= 2) {
-                            $endTs = $positions[$i - 1]['timestamp'];
-                            $results[] = [
-                                'start_ts' => $clusterStart,
-                                'end_ts' => $endTs,
-                                'code' => $clusterCode,
-                                'duration_sec' => $endTs - $clusterStart
-                            ];
-                        }
-                        $clusterCode = null;
-                        $clusterStart = null;
-                        $clusterCount = 0;
-                        $errors[] = ['index' => $i, 'reason' => Errors::OUT_OF_COVERAGE];
-                        continue;
-                    }
-                    if ($clusterCode === null) {
-                        $clusterCode = $code;
-                        $clusterStart = $pos['timestamp'];
-                        $clusterCount = 1;
-                        continue;
-                    }
-                    if ($code === $clusterCode) {
-                        $clusterCount++;
-                        continue;
-                    }
-                    if ($clusterCount >= 2) {
-                        $endTs = $positions[$i - 1]['timestamp'];
-                        $results[] = [
-                            'start_ts' => $clusterStart,
-                            'end_ts' => $endTs,
-                            'code' => $clusterCode,
-                            'duration_sec' => $endTs - $clusterStart
-                        ];
-                    }
-                    $clusterCode = $code;
-                    $clusterStart = $pos['timestamp'];
-                    $clusterCount = 1;
-                }
+        $clusterCode = null;
+        $clusterStart = null;
+        $clusterCount = 0;
+        foreach ($positions as $i => $pos) {
+            $apiRes = $apiResults[$i] ?? null;
+            if ($apiRes === null) {
+                return $this->errorResponse($response, Errors::OUT_OF_COVERAGE, Errors::OUT_OF_COVERAGE, ['index' => $i]);
+            }
+            $code = $apiRes['code'] ?? null;
+            if ($code === null) {
                 if ($clusterCount >= 2) {
-                    $endTs = $positions[count($positions) - 1]['timestamp'];
+                    $endTs = $positions[$i - 1]['timestamp'];
                     $results[] = [
                         'start_ts' => $clusterStart,
                         'end_ts' => $endTs,
@@ -140,19 +97,61 @@ class ToolsController
                         'duration_sec' => $endTs - $clusterStart
                     ];
                 }
-            } catch (\RuntimeException $e) {
-                $reason = $e->getMessage();
-                foreach ($positions as $i => $_) {
-                    $errors[] = ['index' => $i, 'reason' => $reason];
-                }
+                $clusterCode = null;
+                $clusterStart = null;
+                $clusterCount = 0;
+                continue;
             }
+            if ($clusterCode === null) {
+                $clusterCode = $code;
+                $clusterStart = $pos['timestamp'];
+                $clusterCount = 1;
+                continue;
+            }
+            if ($code === $clusterCode) {
+                $clusterCount++;
+                continue;
+            }
+            if ($clusterCount >= 2) {
+                $endTs = $positions[$i - 1]['timestamp'];
+                $results[] = [
+                    'start_ts' => $clusterStart,
+                    'end_ts' => $endTs,
+                    'code' => $clusterCode,
+                    'duration_sec' => $endTs - $clusterStart
+                ];
+            }
+            $clusterCode = $code;
+            $clusterStart = $pos['timestamp'];
+            $clusterCount = 1;
+        }
+        if ($clusterCount >= 2) {
+            $endTs = $positions[count($positions) - 1]['timestamp'];
+            $results[] = [
+                'start_ts' => $clusterStart,
+                'end_ts' => $endTs,
+                'code' => $clusterCode,
+                'duration_sec' => $endTs - $clusterStart
+            ];
         }
 
         $payload = [
-            'results' => $results,
-            'errors' => $errors
+            'results' => $results
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    private function errorResponse(Response $response, string $code, string $message, array $location = null): Response
+    {
+        $error = [
+            'code' => $code,
+            'message' => $message
+        ];
+        if ($location !== null) {
+            $error['location'] = $location;
+        }
+        $response->getBody()->write(json_encode(['error' => $error], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         return $response->withHeader('Content-Type', 'application/json');
     }
 }

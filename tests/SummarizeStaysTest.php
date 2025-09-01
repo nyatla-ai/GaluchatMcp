@@ -52,7 +52,6 @@ class SummarizeStaysTest extends TestCase
         $this->assertCount(2, $data['results']);
         $this->assertSame('A', $data['results'][0]['code']);
         $this->assertSame('B', $data['results'][1]['code']);
-        $this->assertEmpty($data['errors']);
 
         $validator = new Validator();
         $schema = json_decode(file_get_contents(__DIR__ . '/../app/resources/schema/summarize_stays.output.json'));
@@ -63,9 +62,6 @@ class SummarizeStaysTest extends TestCase
     public function testSummarizeStaysInvalidTime(): void
     {
         $client = $this->createMock(GaluchatClient::class);
-        $client->method('resolve')->willReturn([
-            ['code' => 'A']
-        ]);
         $app = $this->createApp($client);
         $payload = [
             'positions' => [
@@ -78,8 +74,38 @@ class SummarizeStaysTest extends TestCase
         $response = $app->handle($request);
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode((string)$response->getBody(), true);
-        $this->assertEmpty($data['results']);
-        $this->assertCount(1, $data['errors']);
-        $this->assertSame('INVALID_TIMESTAMP', $data['errors'][0]['reason']);
+        $this->assertArrayHasKey('error', $data);
+        $this->assertSame('INVALID_INPUT', $data['error']['code']);
+        $this->assertSame('INVALID_TIMESTAMP', $data['error']['message']);
+    }
+
+    public function testSummarizeStaysNullCode(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willReturn([
+            ['code' => 'A'],
+            ['code' => 'A'],
+            ['code' => null],
+            ['code' => 'B'],
+            ['code' => 'B']
+        ]);
+        $app = $this->createApp($client);
+        $payload = [
+            'positions' => [
+                ['timestamp' => 0, 'lat' => 35.0, 'lon' => 135.0],
+                ['timestamp' => 60, 'lat' => 35.0, 'lon' => 135.0],
+                ['timestamp' => 120, 'lat' => 35.1, 'lon' => 135.1],
+                ['timestamp' => 180, 'lat' => 35.2, 'lon' => 135.2],
+                ['timestamp' => 240, 'lat' => 35.2, 'lon' => 135.2]
+            ]
+        ];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/summarize_stays')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertCount(2, $data['results']);
+        $this->assertSame('A', $data['results'][0]['code']);
+        $this->assertSame('B', $data['results'][1]['code']);
     }
 }
