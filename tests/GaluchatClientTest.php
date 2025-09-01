@@ -13,7 +13,12 @@ class GaluchatClientTest extends TestCase
     {
         $config = [
             'base_url' => 'http://example.com',
-            'mapsets' => [$granularity => 'm'],
+            'timeout_ms' => 1000,
+            'mapsets' => [
+                'admin' => 'a',
+                'estat' => 'e',
+                'jarl' => 'j'
+            ],
             'unit' => 1.0
         ];
         $client = new GaluchatClient($config);
@@ -24,6 +29,59 @@ class GaluchatClientTest extends TestCase
         $prop->setAccessible(true);
         $prop->setValue($client, $guzzle);
         return $client;
+    }
+
+    public function testConstructorAcceptsValidConfig(): void
+    {
+        $config = [
+            'base_url' => 'http://example.com',
+            'timeout_ms' => 1000,
+            'mapsets' => [
+                'admin' => 'a',
+                'estat' => 'e',
+                'jarl' => 'j'
+            ],
+            'unit' => 1.0
+        ];
+        $client = new GaluchatClient($config);
+        $this->assertInstanceOf(GaluchatClient::class, $client);
+    }
+
+    /**
+     * @dataProvider invalidConfigProvider
+     */
+    public function testConstructorThrowsOnInvalidConfig(array $config): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('INVALID_CONFIG');
+        new GaluchatClient($config);
+    }
+
+    public static function invalidConfigProvider(): array
+    {
+        $base = [
+            'base_url' => 'http://example.com',
+            'timeout_ms' => 1000,
+            'mapsets' => [
+                'admin' => 'a',
+                'estat' => 'e',
+                'jarl' => 'j'
+            ],
+            'unit' => 1.0
+        ];
+        return [
+            'missing base_url' => [array_diff_key($base, ['base_url' => true])],
+            'base_url not string' => [array_merge($base, ['base_url' => 123])],
+            'missing timeout_ms' => [array_diff_key($base, ['timeout_ms' => true])],
+            'timeout_ms not int' => [array_merge($base, ['timeout_ms' => 'abc'])],
+            'missing mapsets' => [array_diff_key($base, ['mapsets' => true])],
+            'mapsets missing admin' => [array_merge($base, ['mapsets' => ['estat' => 'e', 'jarl' => 'j']])],
+            'mapsets missing estat' => [array_merge($base, ['mapsets' => ['admin' => 'a', 'jarl' => 'j']])],
+            'mapsets missing jarl' => [array_merge($base, ['mapsets' => ['admin' => 'a', 'estat' => 'e']])],
+            'mapsets admin not string' => [array_merge($base, ['mapsets' => ['admin' => 1, 'estat' => 'e', 'jarl' => 'j']])],
+            'missing unit' => [array_diff_key($base, ['unit' => true])],
+            'unit not numeric' => [array_merge($base, ['unit' => 'abc'])],
+        ];
     }
 
     public function testResolveAdmin(): void

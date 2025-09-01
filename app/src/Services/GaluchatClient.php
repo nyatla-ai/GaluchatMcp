@@ -18,10 +18,27 @@ class GaluchatClient
 
     public function __construct(array $config)
     {
-        $this->mapsets = $config['mapsets'] ?? [];
-        $this->unit = $config['unit'] ?? 1.0;
-        $baseUrl = $config['base_url'] ?? '';
-        $timeout = ($config['timeout_ms'] ?? 10000) / 1000;
+        if (!isset($config['base_url']) || !is_string($config['base_url']) || $config['base_url'] === '') {
+            throw new \RuntimeException('INVALID_CONFIG');
+        }
+        if (!isset($config['timeout_ms']) || !is_int($config['timeout_ms'])) {
+            throw new \RuntimeException('INVALID_CONFIG');
+        }
+        if (!isset($config['mapsets']) || !is_array($config['mapsets'])) {
+            throw new \RuntimeException('INVALID_CONFIG');
+        }
+        foreach (['admin', 'estat', 'jarl'] as $key) {
+            if (!isset($config['mapsets'][$key]) || !is_string($config['mapsets'][$key]) || $config['mapsets'][$key] === '') {
+                throw new \RuntimeException('INVALID_CONFIG');
+            }
+        }
+        if (!isset($config['unit']) || !is_numeric($config['unit'])) {
+            throw new \RuntimeException('INVALID_CONFIG');
+        }
+        $this->mapsets = $config['mapsets'];
+        $this->unit = (float)$config['unit'];
+        $baseUrl = $config['base_url'];
+        $timeout = $config['timeout_ms'] / 1000;
         $this->http = new Client([
             'base_uri' => rtrim($baseUrl, '/'),
             'timeout' => $timeout,
