@@ -11,6 +11,7 @@
 * **granularity**：返却コードの種類（`admin`：行政区域、`estat`：統計小地域、`jarl`：JCC/JCG）。
 * **mapset**：GaluchatAPI のデータ版・解像度セット。**API の URL クエリパラメータ**として指定可（値は GaluchatAPI 側で定義）。
 * **unit**：GaluchatAPI の整数座標スケーリング係数（API 仕様）。
+* **入力点数上限**：デフォルトで約 10,000 点（設定で変更可）。
 
 ---
 
@@ -58,7 +59,7 @@
 
 * `ref`：任意の参照ラベル。**MCP 内だけで使用**。空文字や `null` を許容し、API には送らない。
 * 座標系：WGS84。**有効範囲は GaluchatAPI が判定する**。
-* 入力点数：制限なし（API が許容する範囲）。
+* 入力点数：最大 10,000 点程度（設定ファイルで変更可）。
 
 ### 3.2 レスポンス（統一ラップ）
 
@@ -106,6 +107,10 @@ return [
     'jarl'  => 'ma10000'           // AACODE系（/rjccs）
   ],
   'unit'       => 0.001            // GaluchatAPI の unit（度→整数）
+  ],
+  'resolve_points' => [
+    'max_points' => 10000          // リクエストあたりの入力点上限
+  ]
 ];
 ```
 
