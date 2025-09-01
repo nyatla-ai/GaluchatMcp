@@ -137,7 +137,7 @@ return [
 
     * HTTP 429 → `RATE_LIMIT` エラーを返却。
     * HTTP 4xx/5xx → ステータスとボディを含む `API_ERROR` を返却。
-7. **応答マージ**：GaluchatAPI 応答は共通して `{addresses:{<code>:<obj>}, aacodes|scodes:[<code|null>,...]}` 形式で返る。`admin`/`jarl` は `aacodes`、`estat` は `scodes` を用いる。各インデックスのコード値から `addresses[code]` を参照し、`admin`/`estat` は配列値をそのまま `code` に、`jarl` は辞書側の `code` を `code` に設定する。地名フィールドを連結して `address` 文字列を作成し、`{ref?, code, address}` を `results` に追加する。コードが `null` の場合は `address` も `null` としカバー外結果として保持する。応答件数が入力と一致しない、またはコードと `addresses` の対応が取れない場合は該当点を特定し `OUT_OF_COVERAGE` エラーを返す。
+7. **応答マージ**：GaluchatAPI 応答は共通して `{addresses:{<code>:<obj>}, aacodes|scodes:[<code|null>,...]}` 形式で返る。`admin`/`jarl` は `aacodes`、`estat` は `scodes` を用いる。各インデックスのコード値から `addresses[code]` を参照し、`admin`/`estat` は配列値をそのまま `code` に、`jarl` は辞書側の `code` を `code` に設定する。地名フィールドを連結して `address` 文字列を作成し、`{ref?, code, address}` を `results` に追加する。コードが `null` の場合は `address` も `null` とした要素を `results` に含める。応答件数が入力と一致しない、またはコードと `addresses` の対応が取れない場合は該当点を特定し `OUT_OF_COVERAGE` エラーを返す。
 8. **応答返却**：`granularity` と `results` を返す。
 ---
 
@@ -148,10 +148,10 @@ return [
 | `INVALID_INPUT`  | `ref` 長さ・文字集合違反、座標レンジ外などの入力エラー |
 | `API_ERROR`      | GaluchatAPI からの 4xx/5xx 応答              |
 | `RATE_LIMIT`     | HTTP 429（レート制限）                       |
-| `OUT_OF_COVERAGE`| GaluchatAPI 応答の不整合やカバー外           |
+| `OUT_OF_COVERAGE`| GaluchatAPI 応答の不整合や欠落               |
 | `INTERNAL`       | サーバー内部エラー                            |
 
-`code` と `address` が同時に `null` の要素はエラーではなく、カバー外結果として `results` にそのまま含める。
+`code` と `address` が同時に `null` の要素はエラーではなく、そのまま `results` に含める。
 
 いずれのエラーでも `results` は返さず、`{error:{code,message,location?}}` を返却する。`location` には問題があった点のインデックスや `ref` を含める。
 
