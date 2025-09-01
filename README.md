@@ -34,11 +34,10 @@ php -S localhost:8080 -t app/public
 Returns manifest describing available tools.
 
 ### `POST /tools/resolve_points`
-Resolve points to district codes. Successful points appear in `results` with
-`ref`, `lat`, `lon`, `ok: true`, and a `payload` containing `code`
-(administrative code) and `address` (resolved address). Points that cannot be
-resolved are listed in `errors` with `ref`, `lat`, `lon`, and a `reason`; these
-entries do not include `payload`.
+Resolve points to district codes. Each input point yields an element in
+`results`, preserving order. Entries contain the original `ref` (if any), a
+`success` flag, and either a `payload` with `code` and `address` or an `error`
+object describing the failure.
 
 Request body:
 ```json
@@ -58,21 +57,19 @@ Response body:
   "results": [
     {
       "ref": "row_0001",
-      "lat": 35.681240,
-      "lon": 139.767120,
-      "ok": true,
+      "success": true,
       "payload": {
         "code": "13101",
         "address": "東京都千代田区"
       }
-    }
-  ],
-  "errors": [
+    },
     {
       "ref": "row_0002",
-      "lat": 35.695800,
-      "lon": 139.751400,
-      "reason": "OUT_OF_COVERAGE"
+      "success": false,
+      "error": {
+        "code": "OUT_OF_COVERAGE",
+        "message": "OUT_OF_COVERAGE"
+      }
     }
   ]
 }
