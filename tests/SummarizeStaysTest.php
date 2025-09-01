@@ -30,10 +30,10 @@ class SummarizeStaysTest extends TestCase
     {
         $client = $this->createMock(GaluchatClient::class);
         $client->method('resolve')->willReturn([
-            ['code' => 'A'],
-            ['code' => 'A'],
-            ['code' => 'B'],
-            ['code' => 'B']
+            ['code' => 'A', 'address' => 'AA'],
+            ['code' => 'A', 'address' => 'AA'],
+            ['code' => 'B', 'address' => 'BB'],
+            ['code' => 'B', 'address' => 'BB']
         ]);
         $app = $this->createApp($client);
         $payload = [
@@ -51,7 +51,13 @@ class SummarizeStaysTest extends TestCase
         $data = json_decode((string)$response->getBody(), true);
         $this->assertCount(2, $data['results']);
         $this->assertSame('A', $data['results'][0]['code']);
+        $this->assertSame('AA', $data['results'][0]['address']);
+        $this->assertSame(2, $data['results'][0]['count']);
+        $this->assertSame(60, $data['results'][0]['duration_sec']);
         $this->assertSame('B', $data['results'][1]['code']);
+        $this->assertSame('BB', $data['results'][1]['address']);
+        $this->assertSame(2, $data['results'][1]['count']);
+        $this->assertSame(60, $data['results'][1]['duration_sec']);
 
         $validator = new Validator();
         $schema = json_decode(file_get_contents(__DIR__ . '/../app/resources/schema/summarize_stays.output.json'));
@@ -83,11 +89,11 @@ class SummarizeStaysTest extends TestCase
     {
         $client = $this->createMock(GaluchatClient::class);
         $client->method('resolve')->willReturn([
-            ['code' => 'A'],
-            ['code' => 'A'],
-            ['code' => null],
-            ['code' => 'B'],
-            ['code' => 'B']
+            ['code' => 'A', 'address' => 'AA'],
+            ['code' => 'A', 'address' => 'AA'],
+            ['code' => null, 'address' => 'IGNORED'],
+            ['code' => 'B', 'address' => 'BB'],
+            ['code' => 'B', 'address' => 'BB']
         ]);
         $app = $this->createApp($client);
         $payload = [
@@ -104,8 +110,18 @@ class SummarizeStaysTest extends TestCase
         $response = $app->handle($request);
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode((string)$response->getBody(), true);
-        $this->assertCount(2, $data['results']);
+        $this->assertCount(3, $data['results']);
         $this->assertSame('A', $data['results'][0]['code']);
-        $this->assertSame('B', $data['results'][1]['code']);
+        $this->assertSame('AA', $data['results'][0]['address']);
+        $this->assertSame(2, $data['results'][0]['count']);
+        $this->assertSame(60, $data['results'][0]['duration_sec']);
+        $this->assertNull($data['results'][1]['code']);
+        $this->assertNull($data['results'][1]['address']);
+        $this->assertSame(1, $data['results'][1]['count']);
+        $this->assertSame(0, $data['results'][1]['duration_sec']);
+        $this->assertSame('B', $data['results'][2]['code']);
+        $this->assertSame('BB', $data['results'][2]['address']);
+        $this->assertSame(2, $data['results'][2]['count']);
+        $this->assertSame(60, $data['results'][2]['duration_sec']);
     }
 }
