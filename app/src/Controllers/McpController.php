@@ -47,8 +47,7 @@ class McpController
                         'positions: array of {timestamp, lat, lon}'
                     ],
                     'output' => [
-                        'results: array of {start_ts, end_ts, code, duration_sec}',
-                        'errors: array of {index, reason}'
+                        'results: array of {start_ts, end_ts, code, address, duration_sec, count}'
                     ],
                     'input_schema' => 'app/resources/schema/summarize_stays.input.json',
                     'output_schema' => 'app/resources/schema/summarize_stays.output.json',
@@ -64,10 +63,11 @@ class McpController
                                 'start_ts' => 0,
                                 'end_ts' => 60,
                                 'code' => '00000',
-                                'duration_sec' => 60
+                                'address' => 'Example',
+                                'duration_sec' => 60,
+                                'count' => 2
                             ]
-                        ],
-                        'errors' => []
+                        ]
                     ]
                 ]
             ]
