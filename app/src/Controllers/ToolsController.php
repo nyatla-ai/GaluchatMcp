@@ -46,11 +46,8 @@ class ToolsController
             }
             $results[] = [
                 'ref' => $pt['ref'] ?? null,
-                'success' => true,
-                'payload' => [
-                    'code' => $apiRes['code'] ?? null,
-                    'address' => $apiRes['address'] ?? null
-                ]
+                'code' => $apiRes['code'] ?? null,
+                'address' => $apiRes['address'] ?? null
             ];
         }
 

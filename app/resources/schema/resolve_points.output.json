@@ -12,18 +12,10 @@
         "type": "object",
         "properties": {
           "ref": { "type": ["string", "null"] },
-          "success": { "const": true },
-          "payload": {
-            "type": "object",
-            "properties": {
-              "code": { "type": ["string", "null"] },
-              "address": { "type": ["string", "null"] }
-            },
-            "required": ["code", "address"],
-            "additionalProperties": true
-          }
+          "code": { "type": ["string", "null"] },
+          "address": { "type": ["string", "null"] }
         },
-        "required": ["success", "payload"],
+        "required": ["ref", "code", "address"],
         "additionalProperties": false
       }
     }

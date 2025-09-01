@@ -47,8 +47,9 @@ class ToolsControllerTest extends TestCase
         $data = json_decode((string)$response->getBody(), true);
         $this->assertArrayNotHasKey('error', $data);
         $this->assertCount(2, $data['results']);
-        $this->assertTrue($data['results'][0]['success']);
-        $this->assertSame('13101', $data['results'][0]['payload']['code']);
+        $this->assertSame('r1', $data['results'][0]['ref']);
+        $this->assertSame('13101', $data['results'][0]['code']);
+        $this->assertSame('A', $data['results'][0]['address']);
     }
 
     public function testResolvePointsNullCode(): void
@@ -69,6 +70,7 @@ class ToolsControllerTest extends TestCase
         $data = json_decode((string)$response->getBody(), true);
         $this->assertSame(200, $response->getStatusCode());
         $this->assertArrayNotHasKey('error', $data);
-        $this->assertNull($data['results'][0]['payload']['code']);
+        $this->assertNull($data['results'][0]['code']);
+        $this->assertNull($data['results'][0]['address']);
     }
 }

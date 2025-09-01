@@ -35,9 +35,8 @@ Returns manifest describing available tools.
 
 ### `POST /tools/resolve_points`
 Resolve points to district codes. Each input point yields an element in
-`results`, preserving order. Entries contain the original `ref` (if any), a
-`success` flag, and either a `payload` with `code` and `address` or an `error`
-object describing the failure.
+`results`, preserving order. Entries contain the original `ref` (if any), along
+with the resolved `code` and `address` (both may be `null`).
 
 Request body:
 ```json
@@ -57,19 +56,13 @@ Response body:
   "results": [
     {
       "ref": "row_0001",
-      "success": true,
-      "payload": {
-        "code": "13101",
-        "address": "東京都千代田区"
-      }
+      "code": "13101",
+      "address": "東京都千代田区"
     },
     {
       "ref": "row_0002",
-      "success": false,
-      "error": {
-        "code": "OUT_OF_COVERAGE",
-        "message": "OUT_OF_COVERAGE"
-      }
+      "code": null,
+      "address": null
     }
   ]
 }

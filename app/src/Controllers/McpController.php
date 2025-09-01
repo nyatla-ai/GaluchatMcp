@@ -19,8 +19,7 @@ class McpController
                     ],
                     'output' => [
                         'granularity: admin|estat|jarl',
-                        'results: array of {ref?, lat, lon, ok, payload{code, address}}',
-                        'errors: array of {ref?, lat, lon, reason}'
+                        'results: array of {ref?, code, address}'
                     ],
                     'input_schema' => 'app/resources/schema/resolve_points.input.json',
                     'output_schema' => 'app/resources/schema/resolve_points.output.json',
@@ -34,16 +33,11 @@ class McpController
                         'granularity' => 'admin',
                         'results' => [
                             [
-                                'lat' => 35.0,
-                                'lon' => 135.0,
-                                'ok' => true,
-                                'payload' => [
-                                    'code' => '00000',
-                                    'address' => 'Example'
-                                ]
+                                'ref' => null,
+                                'code' => '00000',
+                                'address' => 'Example'
                             ]
-                        ],
-                        'errors' => []
+                        ]
                     ]
                 ],
                 [
