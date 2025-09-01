@@ -2,7 +2,7 @@
 
 ## 1. スコープと用語
 - **position**: 単一観測点 `{timestamp, lat, lon}`。時刻は秒単位の数値。
-- **stay**: 連続した position が同一の地区コードに属する区間。`start_ts`, `end_ts`, `code`, `duration_sec` を持つ。
+- **stay**: 連続した position が同一の地区コードに属する区間。`start_ts`, `end_ts`, `code`, `address`, `duration_sec`, `count` を持つ。
 
 ## 2. MCP 入出力
 ### 2.1 リクエスト
@@ -19,18 +19,25 @@
 ```jsonc
 {
   "results": [
-    {"start_ts": number, "end_ts": number, "code": string, "duration_sec": number}
+    {
+      "start_ts": number,
+      "end_ts": number,
+      "code": string,
+      "address": string,
+      "duration_sec": number,
+      "count": number
+    }
   ]
 }
 ```
-- `results` は検出順。`code` は地区コード。
+- `results` は検出順。`code` は地区コード、`address` はその住所表記、`count` は滞在に含まれるサンプル数。
 - 無効サンプルは出力に含めず処理を継続する。
 
 ## 3. 処理フロー
 1. **入力検証**: `timestamp` が単調増加かつ数値であること、`lat`/`lon` が数値であることを確認。
-2. **地区コード解決**: 位置サンプルを Galuchat API に送り、対応する地区コードを取得。
-3. **クラスタリング**: 連続して同じコードが続く区間を滞在として確定。2サンプル未満の区間は破棄。
-4. **集計**: 採用クラスタから `start_ts`/`end_ts`/`code`/`duration_sec` を算出し `results` に push。
+2. **地区コード解決**: 位置サンプルを Galuchat API に送り、対応する地区コードと住所を取得。
+3. **クラスタリング**: 連続して同じコードが続く区間を滞在として確定。1サンプルのみの区間も滞在として扱う。
+4. **集計**: 各クラスタから `start_ts`/`end_ts`/`code`/`address`/`duration_sec`/`count` を算出し `results` に push。
 
 ## 4. 無効サンプルの扱い
 | reason            | 説明                                 |
