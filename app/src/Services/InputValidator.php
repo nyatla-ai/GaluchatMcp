@@ -17,6 +17,7 @@ class InputValidator
         foreach ($data['points'] as $index => $pt) {
             $lat = $pt['lat'] ?? null;
             $lon = $pt['lon'] ?? null;
+            $hasRef = array_key_exists('ref', $pt);
             $ref = $pt['ref'] ?? null;
             if (!is_numeric($lat) || !is_numeric($lon)) {
                 throw new InvalidInputException('Invalid coordinate', [
@@ -26,18 +27,21 @@ class InputValidator
                     'lon' => $lon
                 ]);
             }
-            if ($ref !== null && !preg_match('/^[A-Za-z0-9._:-]{0,128}$/', $ref)) {
+            if ($hasRef && $ref !== null && !preg_match('/^[A-Za-z0-9._:-]{0,128}$/', $ref)) {
                 throw new InvalidInputException('Invalid ref', [
                     'index' => $index,
                     'ref' => $ref
                 ]);
             }
-            $valid[] = [
+            $point = [
                 'index' => $index,
                 'lat' => (float)$lat,
                 'lon' => (float)$lon,
-                'ref' => $ref
             ];
+            if ($hasRef) {
+                $point['ref'] = $ref;
+            }
+            $valid[] = $point;
         }
         return $valid;
     }

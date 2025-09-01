@@ -50,11 +50,14 @@ class ToolsController
             }
             $code = $apiRes['code'] ?? null;
             $address = $code === null ? null : ($apiRes['address'] ?? null);
-            $results[] = [
-                'ref' => $pt['ref'] ?? null,
+            $item = [
                 'code' => $code,
                 'address' => $address
             ];
+            if (array_key_exists('ref', $pt)) {
+                $item['ref'] = $pt['ref'];
+            }
+            $results[] = $item;
         }
 
         $payload = [

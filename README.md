@@ -35,9 +35,10 @@ Returns manifest describing available tools.
 
 ### `POST /tools/resolve_points`
 Resolve points to district codes. Each input point yields an element in
-`results`, preserving order. Entries contain the original `ref` (if any), along
-with the resolved `code` and `address` (both may be `null`). The `ref` field
-itself is optional and may be omitted or set to an empty string or `null`.
+`results`, preserving order. Entries echo the original `ref` (if any) along with
+the resolved `code` and `address` (both may be `null`). The `ref` field is
+optional; it may be omitted or set to an empty string or `null`. When omitted in
+the request, it is not included in the corresponding result.
 
 Request body:
 ```json
@@ -45,7 +46,7 @@ Request body:
   "granularity": "admin",
   "points": [
     {"ref": "row_0001", "lat": 35.681240, "lon": 139.767120},
-    {"ref": "row_0002", "lat": 35.695800, "lon": 139.751400}
+    {"lat": 35.695800, "lon": 139.751400}
   ]
 }
 ```
@@ -61,7 +62,6 @@ Response body:
       "address": "東京都千代田区"
     },
     {
-      "ref": "row_0002",
       "code": null,
       "address": null
     }

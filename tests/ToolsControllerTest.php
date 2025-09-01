@@ -99,7 +99,7 @@ class ToolsControllerTest extends TestCase
         $this->assertArrayNotHasKey('error', $data);
         $this->assertCount(3, $data['results']);
         $this->assertSame('', $data['results'][0]['ref']);
-        $this->assertNull($data['results'][1]['ref']);
+        $this->assertArrayNotHasKey('ref', $data['results'][1]);
         $this->assertNull($data['results'][2]['ref']);
     }
 
