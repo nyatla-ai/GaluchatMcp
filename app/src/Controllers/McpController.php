@@ -48,13 +48,12 @@ class McpController
                 ],
                 [
                     'name' => 'summarize_stays',
-                    'description' => 'Cluster timestamped positions into stay segments.',
+                    'description' => 'Group consecutive positions by region code.',
                     'input' => [
-                        'positions: array of {timestamp, lat, lon}',
-                        'params (optional): {distance_threshold_m?, duration_threshold_sec?}'
+                        'positions: array of {timestamp, lat, lon}'
                     ],
                     'output' => [
-                        'results: array of {start_ts, end_ts, center{lat,lon}, duration_sec}',
+                        'results: array of {start_ts, end_ts, code, duration_sec}',
                         'errors: array of {index, reason}'
                     ],
                     'input_schema' => 'app/resources/schema/summarize_stays.input.json',
@@ -62,7 +61,7 @@ class McpController
                     'example_input' => [
                         'positions' => [
                             ['timestamp' => 0, 'lat' => 35.0, 'lon' => 135.0],
-                            ['timestamp' => 60, 'lat' => 35.0, 'lon' => 135.0005]
+                            ['timestamp' => 60, 'lat' => 35.0, 'lon' => 135.0]
                         ]
                     ],
                     'example_output' => [
@@ -70,7 +69,7 @@ class McpController
                             [
                                 'start_ts' => 0,
                                 'end_ts' => 60,
-                                'center' => ['lat' => 35.0, 'lon' => 135.00025],
+                                'code' => '00000',
                                 'duration_sec' => 60
                             ]
                         ],

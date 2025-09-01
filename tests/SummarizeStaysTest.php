@@ -13,10 +13,9 @@ use Opis\JsonSchema\Validator;
 
 class SummarizeStaysTest extends TestCase
 {
-    private function createApp(): \Slim\App
+    private function createApp(GaluchatClient $client): \Slim\App
     {
         $validator = new InputValidator();
-        $client = $this->createMock(GaluchatClient::class);
         $controller = new ToolsController($validator, $client);
         $app = AppFactory::create();
         $app->addBodyParsingMiddleware();
@@ -29,18 +28,20 @@ class SummarizeStaysTest extends TestCase
 
     public function testSummarizeStaysSuccess(): void
     {
-        $app = $this->createApp();
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willReturn([
+            ['code' => 'A'],
+            ['code' => 'A'],
+            ['code' => 'B'],
+            ['code' => 'B']
+        ]);
+        $app = $this->createApp($client);
         $payload = [
             'positions' => [
                 ['timestamp' => 0, 'lat' => 35.0, 'lon' => 135.0],
-                ['timestamp' => 60, 'lat' => 35.0, 'lon' => 135.0005],
-                ['timestamp' => 120, 'lat' => 35.0, 'lon' => 135.0],
-                ['timestamp' => 5000, 'lat' => 35.1, 'lon' => 135.1],
-                ['timestamp' => 5120, 'lat' => 35.1002, 'lon' => 135.1002]
-            ],
-            'params' => [
-                'distance_threshold_m' => 100,
-                'duration_threshold_sec' => 60
+                ['timestamp' => 60, 'lat' => 35.0, 'lon' => 135.0],
+                ['timestamp' => 120, 'lat' => 35.1, 'lon' => 135.1],
+                ['timestamp' => 180, 'lat' => 35.1, 'lon' => 135.1]
             ]
         ];
         $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/summarize_stays')
@@ -49,6 +50,8 @@ class SummarizeStaysTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $data = json_decode((string)$response->getBody(), true);
         $this->assertCount(2, $data['results']);
+        $this->assertSame('A', $data['results'][0]['code']);
+        $this->assertSame('B', $data['results'][1]['code']);
         $this->assertEmpty($data['errors']);
 
         $validator = new Validator();
@@ -59,7 +62,11 @@ class SummarizeStaysTest extends TestCase
 
     public function testSummarizeStaysInvalidTime(): void
     {
-        $app = $this->createApp();
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willReturn([
+            ['code' => 'A']
+        ]);
+        $app = $this->createApp($client);
         $payload = [
             'positions' => [
                 ['timestamp' => 10, 'lat' => 35.0, 'lon' => 135.0],

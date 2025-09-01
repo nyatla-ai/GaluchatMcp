@@ -76,18 +76,17 @@ Response body:
 ```
 
 ### `POST /tools/summarize_stays`
-Generate stay segments from timestamped position samples. The server clusters
-positions by distance and time thresholds and returns stay periods with their
-centers and durations.
+Generate stay segments from timestamped position samples. The server resolves
+each position to a region code and groups consecutive samples that share the
+same code, returning stay periods with their codes and durations.
 
 Request body:
 ```json
 {
   "positions": [
     {"timestamp": 0, "lat": 35.0, "lon": 135.0},
-    {"timestamp": 60, "lat": 35.0, "lon": 135.0005}
-  ],
-  "params": {"distance_threshold_m": 100, "duration_threshold_sec": 60}
+    {"timestamp": 60, "lat": 35.0, "lon": 135.0}
+  ]
 }
 ```
 
@@ -98,7 +97,7 @@ Response body:
     {
       "start_ts": 0,
       "end_ts": 60,
-      "center": {"lat": 35.0, "lon": 135.00025},
+      "code": "13101",
       "duration_sec": 60
     }
   ]
