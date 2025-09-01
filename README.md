@@ -1,46 +1,55 @@
-# Galuchat MCP Server
+# README（日本語版）
 
-Minimal MCP server that resolves coordinates to administrative district information.
+最小限のMCPサーバーで、座標から行政区画情報を取得します
 
-## Requirements
+## 必要条件
 
-- PHP 8.2+
+- PHP 8.2 以上
 - Composer
 
-## Installation
+## インストール
 
 ```bash
 composer install
 ```
 
-Copy `.env.example` to `.env` and adjust values:
-
+`.env.example` を `.env` にコピーし、必要な値を設定します。
 ```
 GALUCHAT_BASE_URL=https://galuchat.example.com
 TIMEOUT_MS=3000
 ```
 
-## Running
+## 起動方法
 
-Using PHP built-in server:
-
+PHP のビルトインサーバーで起動する場合:
 ```bash
 php -S localhost:8080 -t app/public
 ```
 
-## Endpoints
+## エンドポイント
 
 ### `GET /mcp/manifest`
-Returns manifest describing available tools.
+
+利用可能なツールのマニフェストを返します。
+
+**curl ワンライナー**
+```bash
+curl http://localhost:8080/mcp/manifest
+```
 
 ### `POST /tools/resolve_points`
-Resolve points to district codes. Each input point yields an element in
-`results`, preserving order. Entries echo the original `ref` (if any) along with
-the resolved `code` and `address` (both may be `null`). The `ref` field is
-optional; it may be omitted or set to an empty string or `null`. When omitted in
-the request, it is not included in the corresponding result.
 
-Request body:
+位置情報の配列を行政区コードと住所に解決します。
+各入力ポイントが順番に `results` に対応し、`ref`（任意）と解決された `code`・`address` を返します。
+
+**curl ワンライナー**
+```bash
+curl -X POST http://localhost:8080/tools/resolve_points \
+  -H "Content-Type: application/json" \
+  -d '{"granularity":"admin","points":[{"ref":"row_0001","lat":35.681240,"lon":139.767120},{"lat":35.695800,"lon":139.751400}]}'
+```
+
+**リクエスト例**
 ```json
 {
   "granularity": "admin",
@@ -51,7 +60,7 @@ Request body:
 }
 ```
 
-Response body:
+**レスポンス例**
 ```json
 {
   "granularity": "admin",
@@ -70,13 +79,19 @@ Response body:
 ```
 
 ### `POST /tools/summarize_stays`
-Generate stay segments from timestamped position samples. The server resolves
-each position to a region code and groups consecutive samples that share the
-same code, returning stay periods with their codes, addresses, and durations.
-Samples whose district codes cannot be resolved have `code` and `address`
-set to `null`, and stays split around these unresolved samples.
 
-Request body:
+タイムスタンプ付き位置情報サンプルから滞在セグメントを生成します。
+連続するサンプルで同じコードを持つものをまとめ、コード・住所・滞在時間を返します。
+解決できないサンプルは `code` と `address` が `null` となり、滞在はその前後で分割されます。
+
+**curl ワンライナー**
+```bash
+curl -X POST http://localhost:8080/tools/summarize_stays \
+  -H "Content-Type: application/json" \
+  -d '{"positions":[{"timestamp":0,"lat":35.0,"lon":135.0},{"timestamp":60,"lat":35.0,"lon":135.0}]}'
+```
+
+**リクエスト例**
 ```json
 {
   "positions": [
@@ -86,7 +101,7 @@ Request body:
 }
 ```
 
-Response body:
+**レスポンス例**
 ```json
 {
   "results": [
@@ -102,18 +117,14 @@ Response body:
 }
 ```
 
-### Invalid vs unresolvable samples
-These rules apply to both `resolve_points` and `summarize_stays`:
-- **Invalid sample**: the position object itself is malformed (e.g. missing
-  fields or non-numeric coordinates). The server stops processing and returns
-  an `INVALID_INPUT` error without any `results`.
-- **Unresolvable sample**: the sample is valid but Galuchat cannot resolve a
-  district. The response still includes the sample, with its `code` and
-  `address` set to `null`, and other samples are processed normally.
+### 無効サンプルと解決不能サンプル
 
-## Error model
+- **無効サンプル**: フィールド不足や非数値座標など、位置情報自体が不正。処理は停止し、`results` を含まない `INVALID_INPUT` エラーが返されます。
+- **解決不能サンプル**: 位置情報は有効だが、Galuchat が行政区を解決できない場合。`code` と `address` が `null` のままレスポンスに含まれ、他のサンプルは通常通り処理されます。
 
-```
+## エラーモデル
+
+```json
 {
   "error": {
     "code": "INVALID_INPUT|API_ERROR|OUT_OF_COVERAGE|RATE_LIMIT|INTERNAL",
@@ -122,7 +133,7 @@ These rules apply to both `resolve_points` and `summarize_stays`:
 }
 ```
 
-## Tests
+## テスト
 
 ```bash
 ./vendor/bin/phpunit
