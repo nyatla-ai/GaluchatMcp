@@ -7,7 +7,7 @@ use App\Services\GaluchatClient;
 use App\Middleware\JsonSchemaMiddleware;
 use App\Middleware\RateLimitMiddleware;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 // load .env if exists
 $envPath = __DIR__ . '/../.env';
@@ -19,7 +19,7 @@ if (file_exists($envPath)) {
 
 // load config via include
 $env = getenv('GALUCHAT_ENV') ?: 'dev';
-$configFile = __DIR__ . "/../config/resolve_points/config.$env.php";
+$configFile = __DIR__ . "/../../config/config.$env.php";
 if (!file_exists($configFile)) {
     throw new RuntimeException("missing config file: $configFile");
 }
@@ -42,5 +42,8 @@ $app->get('/mcp/manifest', [$mcp, 'manifest']);
 $app->post('/tools/resolve_points', [$tools, 'resolvePoints'])
     ->add(new RateLimitMiddleware(5))
     ->add(new JsonSchemaMiddleware(__DIR__ . '/../resources/schema/resolve_points.input.json'));
+$app->post('/tools/summarize_stays', [$tools, 'summarizeStays'])
+    ->add(new RateLimitMiddleware(5))
+    ->add(new JsonSchemaMiddleware(__DIR__ . '/../resources/schema/summarize_stays.input.json'));
 
 $app->run();
