@@ -65,16 +65,35 @@ class GaluchatClient
             throw new \RuntimeException(Errors::API_ERROR);
         }
         $data = json_decode((string)$resp->getBody(), true);
-        if (!is_array($data) || !isset($data['codes']) || !is_array($data['codes'])) {
-            throw new \RuntimeException(Errors::API_ERROR);
+        $codesKey = $granularity === 'estat' ? 'scodes' : 'aacodes';
+        if (!is_array($data) || !isset($data[$codesKey]) || !is_array($data[$codesKey])
+            || !isset($data['addresses']) || !is_array($data['addresses'])) {
+            throw new \RuntimeException(Errors::OUT_OF_COVERAGE);
         }
-        $codes = $data['codes'];
-        $addresses = $data['addresses'] ?? [];
+        $codes = $data[$codesKey];
+        $addresses = $data['addresses'];
+        if (count($codes) !== count($points)) {
+            throw new \RuntimeException(Errors::OUT_OF_COVERAGE);
+        }
         $results = [];
-        foreach ($codes as $i => $code) {
+        foreach ($codes as $i => $rawCode) {
+            if ($rawCode === null) {
+                $results[] = ['code' => null, 'address' => null];
+                continue;
+            }
+            $key = (string)$rawCode;
+            $addr = $addresses[$key] ?? null;
+            if (!is_array($addr)) {
+                throw new \RuntimeException(Errors::OUT_OF_COVERAGE);
+            }
+            $resCode = $addr['code'] ?? $key;
+            if (isset($addr['code'])) {
+                unset($addr['code']);
+            }
+            $addressStr = implode('', $addr);
             $results[] = [
-                'code' => $code,
-                'address' => $addresses[$i] ?? null
+                'code' => (string)$resCode,
+                'address' => $addressStr
             ];
         }
         return $results;
