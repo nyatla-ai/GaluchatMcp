@@ -2,6 +2,9 @@
 
 最小限のMCPサーバーで、座標から行政区画情報を取得します
 
+## エンドポイント
+https://nyatla.jp/galuchat-mcp/mcp/
+
 ## 必要条件
 
 - PHP 8.2 以上
