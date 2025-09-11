@@ -34,6 +34,14 @@ class McpController
             file_get_contents(__DIR__ . '/../../resources/schema/search.output.json'),
             true
         );
+        $fetchInputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/fetch.input.json'),
+            true
+        );
+        $fetchOutputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/fetch.output.json'),
+            true
+        );
 
             return [
                 [
@@ -57,6 +65,13 @@ class McpController
                     'inputSchema' => $searchInputSchema,
                     'outputSchema' => $searchOutputSchema,
                 ],
+                [
+                    'name' => 'fetch',
+                    'title' => 'Fetch Address',
+                    'description' => 'Retrieve address details by id.',
+                    'inputSchema' => $fetchInputSchema,
+                    'outputSchema' => $fetchOutputSchema,
+                ],
             ];
     }
 
@@ -67,6 +82,7 @@ class McpController
         $resolvePointsUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/resolve_points'));
         $summarizeStaysUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/summarize_stays'));
         $searchUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/search'));
+        $fetchUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/fetch'));
 
         $tools = $this->getToolDefinitions();
         $tools[0] += [
@@ -139,6 +155,22 @@ class McpController
                     'title' => 'Example',
                     'code' => '00000'
                 ]
+            ]
+        ];
+        $tools[3] += [
+            'endpoint' => $fetchUrl,
+            'input' => [
+                'id: "<lat>,<lon>"'
+            ],
+            'output' => [
+                '{code, address}'
+            ],
+            'example_input' => [
+                'id' => '35.0,135.0'
+            ],
+            'example_output' => [
+                'code' => '00000',
+                'address' => 'Example'
             ]
         ];
 
