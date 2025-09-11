@@ -35,6 +35,18 @@ composer install
 
 この設定でマニフェストは `https://example.com/example/mcp/manifest.json` から取得できます。
 
+#### リポジトリ全体をサブディレクトリに配置する場合
+
+リポジトリを `https://example.com/galuchat-mcp` などのサブディレクトリにそのまま設置する場合は、
+同梱の `index.php` と `.htaccess` が自動的に `app/public/index.php` をフロントコントローラとして読み込みます。
+設定ファイルの `app.url_prefix` を設置したサブディレクトリに合わせてください（例: `/galuchat-mcp`）。
+
+開発時に PHP のビルトインサーバーを利用する場合は次のコマンドで起動できます。
+
+```bash
+php -S localhost:8080 -t . index.php
+```
+
 #### PHP のビルトインサーバーで動作させる場合
 
 開発用に `php -S` を利用し、ベースパスを `/` にしたいときは次のように設定します。
