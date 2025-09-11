@@ -30,7 +30,11 @@ foreach (['base_url', 'mapsets'] as $k) {
     }
 }
 
+$basePath = rtrim(getenv('MCP_BASE_PATH') ?: '/mcp', '/');
 $app = AppFactory::create();
+if ($basePath !== '' && $basePath !== '/') {
+    $app->setBasePath($basePath);
+}
 $app->addBodyParsingMiddleware();
 $maxPoints = $config['resolve_points']['max_points'] ?? 10000;
 $validator = new InputValidator($maxPoints);
@@ -38,12 +42,21 @@ $client = new GaluchatClient($config['galuchat']);
 $tools = new ToolsController($validator, $client);
 $mcp = new McpController();
 
-$app->get('/mcp/manifest', [$mcp, 'manifest']);
+$manifestPath = ($basePath === '' ? '' : $basePath) . '/manifest.json';
+
+$app->get('/manifest.json', [$mcp, 'manifest']);
 $app->post('/tools/resolve_points', [$tools, 'resolvePoints'])
     ->add(new RateLimitMiddleware(5))
     ->add(new JsonSchemaMiddleware(__DIR__ . '/../resources/schema/resolve_points.input.json'));
 $app->post('/tools/summarize_stays', [$tools, 'summarizeStays'])
     ->add(new RateLimitMiddleware(5))
     ->add(new JsonSchemaMiddleware(__DIR__ . '/../resources/schema/summarize_stays.input.json'));
+
+$app->get('/', function ($request, $response) use ($manifestPath) {
+    return $response->withHeader('Location', $manifestPath)->withStatus(302);
+});
+$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], '/{routes:.+}', function ($request, $response) use ($manifestPath) {
+    return $response->withHeader('Location', $manifestPath)->withStatus(302);
+});
 
 $app->run();

@@ -3,7 +3,7 @@
 最小限のMCPサーバーで、座標から行政区画情報を取得します
 
 ## エンドポイント
-マニフェスト: https://nyatla.jp/galuchat-mcp/mcp/manifest
+マニフェスト: https://nyatla.jp/galuchat-mcp/mcp/manifest.json
 
 ツールの `endpoint` フィールドには、このマニフェストを取得した URL を基準に算出された絶対 URL が含まれます。
 
@@ -23,6 +23,7 @@ composer install
 ```
 GALUCHAT_BASE_URL=https://galuchat.example.com
 TIMEOUT_MS=3000
+MCP_BASE_PATH=/mcp
 ```
 
 ## 起動方法
@@ -34,23 +35,23 @@ php -S localhost:8080 -t app/public
 
 ## エンドポイント
 
-### `GET /mcp/manifest`
+### `GET /mcp/manifest.json`
 
 利用可能なツールのマニフェストを返します。各ツールの `endpoint` フィールドは、このマニフェストを取得した URL を基準に算出された絶対 URL として返されます。
 
 **curl ワンライナー**
 ```bash
-curl http://localhost:8080/mcp/manifest
+curl http://localhost:8080/mcp/manifest.json
 ```
 
-### `POST ../tools/resolve_points`
+### `POST /mcp/tools/resolve_points`
 
 位置情報の配列を行政区コードと住所に解決します。
 各入力ポイントが順番に `results` に対応し、`ref`（任意）と解決された `code`・`address` を返します。
 
 **curl ワンライナー**
 ```bash
-curl -X POST http://localhost:8080/tools/resolve_points \
+curl -X POST http://localhost:8080/mcp/tools/resolve_points \
   -H "Content-Type: application/json" \
   -d '{"granularity":"admin","points":[{"ref":"row_0001","lat":35.681240,"lon":139.767120},{"lat":35.695800,"lon":139.751400}]}'
 ```
@@ -84,7 +85,7 @@ curl -X POST http://localhost:8080/tools/resolve_points \
 }
 ```
 
-### `POST ../tools/summarize_stays`
+### `POST /mcp/tools/summarize_stays`
 
 タイムスタンプ付き位置情報サンプルから滞在セグメントを生成します。
 連続するサンプルで同じコードを持つものをまとめ、コード・住所・滞在時間を返します。
@@ -92,7 +93,7 @@ curl -X POST http://localhost:8080/tools/resolve_points \
 
 **curl ワンライナー**
 ```bash
-curl -X POST http://localhost:8080/tools/summarize_stays \
+curl -X POST http://localhost:8080/mcp/tools/summarize_stays \
   -H "Content-Type: application/json" \
   -d '{"positions":[{"timestamp":0,"lat":35.0,"lon":135.0},{"timestamp":60,"lat":35.0,"lon":135.0}]}'
 ```

@@ -12,8 +12,8 @@ class McpController
     {
         // absolute tool URLs derived from the accessed manifest URL
         $manifestUrl = $request->getUri()->withQuery('')->withFragment('');
-        $resolvePointsUrl = (string) UriResolver::resolve($manifestUrl, new Uri('../tools/resolve_points'));
-        $summarizeStaysUrl = (string) UriResolver::resolve($manifestUrl, new Uri('../tools/summarize_stays'));
+        $resolvePointsUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/resolve_points'));
+        $summarizeStaysUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/summarize_stays'));
 
         $resolvePointsInputSchema = json_decode(
             file_get_contents(__DIR__ . '/../../resources/schema/resolve_points.input.json'),
