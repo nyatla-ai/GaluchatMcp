@@ -17,16 +17,16 @@ if (!file_exists($configFile)) {
     throw new RuntimeException("missing config file: $configFile");
 }
 $config = include $configFile;
-foreach (['base_url', 'mapsets'] as $k) {
+foreach (['api_url_prefix', 'mapsets'] as $k) {
     if (!isset($config['galuchat'][$k])) {
         throw new RuntimeException("config missing galuchat.$k");
     }
 }
 
-$basePath = rtrim(getenv('MCP_BASE_PATH') ?: '/mcp', '/');
+$urlPrefix = rtrim($config['app']['url_prefix'] ?? (getenv('MCP_URL_PREFIX') ?: '/mcp'), '/');
 $app = AppFactory::create();
-if ($basePath !== '' && $basePath !== '/') {
-    $app->setBasePath($basePath);
+if ($urlPrefix !== '' && $urlPrefix !== '/') {
+    $app->setBasePath($urlPrefix);
 }
 $app->addBodyParsingMiddleware();
 $maxPoints = $config['resolve_points']['max_points'] ?? 10000;
@@ -35,7 +35,7 @@ $client = new GaluchatClient($config['galuchat']);
 $tools = new ToolsController($validator, $client);
 $mcp = new McpController();
 
-$manifestPath = ($basePath === '' ? '' : $basePath) . '/manifest.json';
+$manifestPath = ($urlPrefix === '' ? '' : $urlPrefix) . '/manifest.json';
 
 $app->get('/manifest.json', [$mcp, 'manifest']);
 $app->post('/tools/resolve_points', [$tools, 'resolvePoints'])

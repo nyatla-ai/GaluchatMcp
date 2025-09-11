@@ -1,7 +1,10 @@
 <?php
 return [
+    'app' => [
+        'url_prefix' => '/mcp',
+    ],
     'galuchat' => [
-        'base_url' => 'https://galuchat.example.com',
+        'api_url_prefix' => 'https://galuchat.example.com',
         'timeout_ms' => 10000,
         'mapsets' => [
             'admin' => 'ma10000',

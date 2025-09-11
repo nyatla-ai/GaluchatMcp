@@ -99,7 +99,7 @@
 ```php
 return [
   'galuchat' => [
-  'base_url'   => 'https://... ', // GaluchatAPI ベースURL
+  'api_url_prefix'   => 'https://... ', // GaluchatAPI URLプレフィックス
   'timeout_ms' => 10000,
   'mapsets'    => [
     'admin' => 'ma10000',          // AACODE系（/raacs, /rjccs）
@@ -131,7 +131,7 @@ return [
 
 1. **入力検証**：全点について `ref` 長さ・文字集合、および `lat/lon` の数値範囲を確認。いずれかが不正な場合は該当要素のインデックスまたは `ref` を `location` に含めた `INVALID_INPUT` エラーを返し処理を中断する。
 2. **granularity 決定**：省略時 `admin`。
- 3. **設定読込**：`base_url`、`mapset[granularity]` を取得。
+ 3. **設定読込**：`api_url_prefix`、`mapset[granularity]` を取得。
  4. **リクエスト構築**：
 
      * `unit` は常に `1` をボディに付与。

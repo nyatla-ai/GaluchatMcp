@@ -12,7 +12,7 @@ class GaluchatClientTest extends TestCase
     private function createClient(array $responses, string $granularity = 'admin'): GaluchatClient
     {
         $config = [
-            'base_url' => 'http://example.com',
+            'api_url_prefix' => 'http://example.com',
             'timeout_ms' => 1000,
             'mapsets' => [
                 'admin' => 'a',
@@ -33,7 +33,7 @@ class GaluchatClientTest extends TestCase
     public function testConstructorAcceptsValidConfig(): void
     {
         $config = [
-            'base_url' => 'http://example.com',
+            'api_url_prefix' => 'http://example.com',
             'timeout_ms' => 1000,
             'mapsets' => [
                 'admin' => 'a',
@@ -58,7 +58,7 @@ class GaluchatClientTest extends TestCase
     public static function invalidConfigProvider(): array
     {
         $base = [
-            'base_url' => 'http://example.com',
+            'api_url_prefix' => 'http://example.com',
             'timeout_ms' => 1000,
             'mapsets' => [
                 'admin' => 'a',
@@ -67,8 +67,8 @@ class GaluchatClientTest extends TestCase
             ]
         ];
         return [
-            'missing base_url' => [array_diff_key($base, ['base_url' => true])],
-            'base_url not string' => [array_merge($base, ['base_url' => 123])],
+            'missing api_url_prefix' => [array_diff_key($base, ['api_url_prefix' => true])],
+            'api_url_prefix not string' => [array_merge($base, ['api_url_prefix' => 123])],
             'missing timeout_ms' => [array_diff_key($base, ['timeout_ms' => true])],
             'timeout_ms not int' => [array_merge($base, ['timeout_ms' => 'abc'])],
             'missing mapsets' => [array_diff_key($base, ['mapsets' => true])],

@@ -19,7 +19,39 @@
 composer install
 ```
 
-接続設定は `config/config.dev.php` に記述されています。必要に応じて `base_url` や `timeout_ms` を編集してください。
+接続設定は `config/config.dev.php` に記述されています。Galuchat API への接続先 URL プレフィックスは `galuchat.api_url_prefix` で指定します。サブディレクトリで動かす場合はアプリケーションの URL 接頭辞 `app.url_prefix` を設定ファイルで変更してください。
+
+### `app.url_prefix` の設定例
+
+#### レンタルサーバーのサブディレクトリに配置する場合
+
+`app/public` をレンタルサーバーの `public_html/example` など任意のサブディレクトリにアップロードし、`https://example.com/example/mcp` で公開する場合は、設定ファイルに次のように追記します。
+
+```php
+'app' => [
+    'url_prefix' => '/example/mcp',
+],
+```
+
+この設定でマニフェストは `https://example.com/example/mcp/manifest.json` から取得できます。
+
+#### PHP のビルトインサーバーで動作させる場合
+
+開発用に `php -S` を利用し、ベースパスを `/` にしたいときは次のように設定します。
+
+```php
+'app' => [
+    'url_prefix' => '/',
+],
+```
+
+サーバーは次のコマンドで起動します。
+
+```bash
+php -S localhost:8080 -t app/public
+```
+
+上記では `http://localhost:8080/manifest.json` でマニフェストを取得できます。`app.url_prefix` を `/mcp` のままにした場合は `http://localhost:8080/mcp/manifest.json` となります。
 
 ## 起動方法
 
