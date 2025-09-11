@@ -9,13 +9,6 @@ use App\Middleware\RateLimitMiddleware;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-// load .env if exists
-$envPath = __DIR__ . '/../.env';
-if (file_exists($envPath)) {
-    foreach (parse_ini_file($envPath, false, INI_SCANNER_RAW) as $k => $v) {
-        putenv("$k=$v");
-    }
-}
 
 // load config via include
 $env = getenv('GALUCHAT_ENV') ?: 'dev';
