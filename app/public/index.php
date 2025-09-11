@@ -29,6 +29,8 @@ if ($urlPrefix !== '' && $urlPrefix !== '/') {
     $app->setBasePath($urlPrefix);
 }
 $app->addBodyParsingMiddleware();
+$app->addRoutingMiddleware();
+$app->addErrorMiddleware(true, true, true);
 $maxPoints = $config['resolve_points']['max_points'] ?? 10000;
 $validator = new InputValidator($maxPoints);
 $client = new GaluchatClient($config['galuchat']);
@@ -48,8 +50,7 @@ $app->post('/tools/summarize_stays', [$tools, 'summarizeStays'])
 $app->get('/', function ($request, $response) use ($manifestPath) {
     return $response->withHeader('Location', $manifestPath)->withStatus(302);
 });
-$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], '/{routes:.+}', function ($request, $response) use ($manifestPath) {
-    return $response->withHeader('Location', $manifestPath)->withStatus(302);
-});
+
+// Removed catch-all route so Slim's default 404/405 handlers are used
 
 $app->run();
