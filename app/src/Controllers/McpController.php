@@ -20,6 +20,7 @@ class McpController
                     'name' => 'resolve_points',
                     'endpoint' => $resolvePointsUrl,
                     'description' => 'Resolve coordinates to district code and address.',
+                    'endpoint' => '../tools/resolve_points',
                     'input' => [
                         'granularity (optional): admin|estat|jarl, default admin',
                         'points: array of {ref?, lat, lon}'
@@ -50,6 +51,7 @@ class McpController
                     'name' => 'summarize_stays',
                     'endpoint' => $summarizeStaysUrl,
                     'description' => 'Group consecutive positions by region code.',
+                    'endpoint' => '../tools/summarize_stays',
                     'input' => [
                         'positions: array of {timestamp, lat, lon}'
                     ],

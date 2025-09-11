@@ -3,7 +3,9 @@
 最小限のMCPサーバーで、座標から行政区画情報を取得します
 
 ## エンドポイント
-https://nyatla.jp/galuchat-mcp/mcp/manifest
+マニフェスト: https://nyatla.jp/galuchat-mcp/mcp/manifest
+
+ツールエンドポイントは上記マニフェストを基準に `../tools/resolve_points`、`../tools/summarize_stays` としてアクセスします。
 
 
 ## 必要条件
@@ -36,12 +38,14 @@ php -S localhost:8080 -t app/public
 
 利用可能なツールのマニフェストを返します。各ツールの `endpoint` フィールドは絶対URLとして返されます。
 
+以降で示すツールのエンドポイントは、このマニフェストを取得した URL を基準にした相対パスです。
+
 **curl ワンライナー**
 ```bash
 curl http://localhost:8080/mcp/manifest
 ```
 
-### `POST /tools/resolve_points`
+### `POST ../tools/resolve_points`
 
 位置情報の配列を行政区コードと住所に解決します。
 各入力ポイントが順番に `results` に対応し、`ref`（任意）と解決された `code`・`address` を返します。
@@ -82,7 +86,7 @@ curl -X POST http://localhost:8080/tools/resolve_points \
 }
 ```
 
-### `POST /tools/summarize_stays`
+### `POST ../tools/summarize_stays`
 
 タイムスタンプ付き位置情報サンプルから滞在セグメントを生成します。
 連続するサンプルで同じコードを持つものをまとめ、コード・住所・滞在時間を返します。
