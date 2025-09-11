@@ -24,6 +24,9 @@ class RpcController
             return $this->error($response, null, -32700, 'Parse error');
         }
         $id = $body['id'] ?? null;
+        if (!array_key_exists('id', $body)) {
+            return $response->withStatus(204);
+        }
         $method = $body['method'] ?? null;
         $jsonrpc = $body['jsonrpc'] ?? null;
         $params = $body['params'] ?? null;
