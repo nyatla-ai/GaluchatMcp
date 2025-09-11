@@ -58,6 +58,9 @@ class RpcController
                         case 'search':
                             $res = $this->tools->executeSearch($arguments);
                             break;
+                        case 'fetch':
+                            $res = $this->tools->executeFetch($arguments);
+                            break;
                         default:
                             return $this->error($response, $id, -32601, 'Method not found');
                     }

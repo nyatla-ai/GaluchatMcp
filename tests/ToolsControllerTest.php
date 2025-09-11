@@ -39,6 +39,23 @@ class ToolsControllerTest extends TestCase
         return $app;
     }
 
+    private function createSearchFetchApp($client): \Slim\App
+    {
+        $validator = new InputValidator();
+        $controller = new ToolsController($validator, $client);
+        $app = AppFactory::create();
+        $app->addBodyParsingMiddleware();
+        $searchSchema = __DIR__ . '/../app/resources/schema/search.input.json';
+        $fetchSchema = __DIR__ . '/../app/resources/schema/fetch.input.json';
+        $app->post('/tools/search', [$controller, 'search'])
+            ->add(new RateLimitMiddleware(100))
+            ->add(new JsonSchemaMiddleware($searchSchema));
+        $app->post('/tools/fetch', [$controller, 'fetch'])
+            ->add(new RateLimitMiddleware(100))
+            ->add(new JsonSchemaMiddleware($fetchSchema));
+        return $app;
+    }
+
     public function testResolvePointsSuccess(): void
     {
         $client = $this->createMock(GaluchatClient::class);
@@ -204,5 +221,44 @@ class ToolsControllerTest extends TestCase
         $data = json_decode((string)$response->getBody(), true);
         $this->assertIsArray($data);
         $this->assertCount(0, $data);
+    }
+
+    public function testFetchSuccess(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willReturnOnConsecutiveCalls(
+            [['code' => '13101', 'address' => 'A']],
+            [['code' => '13101', 'address' => 'A']]
+        );
+        $app = $this->createSearchFetchApp($client);
+        $searchPayload = ['query' => '35.0,135.0'];
+        $searchRequest = (new ServerRequestFactory())->createServerRequest('POST', '/tools/search')
+            ->withParsedBody($searchPayload);
+        $searchResponse = $app->handle($searchRequest);
+        $searchData = json_decode((string)$searchResponse->getBody(), true);
+        $id = $searchData[0]['id'];
+
+        $fetchPayload = ['id' => $id];
+        $fetchRequest = (new ServerRequestFactory())->createServerRequest('POST', '/tools/fetch')
+            ->withParsedBody($fetchPayload);
+        $fetchResponse = $app->handle($fetchRequest);
+        $this->assertSame(200, $fetchResponse->getStatusCode());
+        $data = json_decode((string)$fetchResponse->getBody(), true);
+        $this->assertSame('13101', $data['code']);
+        $this->assertSame('A', $data['address']);
+    }
+
+    public function testFetchInvalidId(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $app = $this->createSearchFetchApp($client);
+        $payload = ['id' => 'invalid'];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/fetch')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertNull($data['code']);
+        $this->assertNull($data['address']);
     }
 }
