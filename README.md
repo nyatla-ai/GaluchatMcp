@@ -74,7 +74,9 @@ php -S localhost:8080 -t app/public
 
 ## エンドポイント
 
-### `GET /mcp/manifest.json`
+これらのパスは設定ファイルの `app.url_prefix`（デフォルト `/mcp`）をベースパスとして公開されます。
+
+### `GET /manifest.json`
 
 利用可能なツールのマニフェストを返します。各ツールの `endpoint` フィールドは、このマニフェストを取得した URL を基準に算出された絶対 URL として返されます。
 
@@ -83,7 +85,7 @@ php -S localhost:8080 -t app/public
 curl http://localhost:8080/mcp/manifest.json
 ```
 
-### `POST /mcp/tools/resolve_points`
+### `POST /tools/resolve_points`
 
 位置情報の配列を行政区コードと住所に解決します。
 各入力ポイントが順番に `results` に対応し、`ref`（任意）と解決された `code`・`address` を返します。
@@ -124,7 +126,7 @@ curl -X POST http://localhost:8080/mcp/tools/resolve_points \
 }
 ```
 
-### `POST /mcp/tools/summarize_stays`
+### `POST /tools/summarize_stays`
 
 タイムスタンプ付き位置情報サンプルから滞在セグメントを生成します。
 連続するサンプルで同じコードを持つものをまとめ、コード・住所・滞在時間を返します。
