@@ -8,19 +8,14 @@
 composer install --no-progress
 ```
 
-## 2. 環境変数の設定
+## 2. 設定ファイルの編集
 
-`.env.example` を `.env` にコピーし、Galuchat API のベースURLなどを設定します。
+`config/config.dev.php` を編集して Galuchat API のベースURLやタイムアウトを設定します。
 
-```bash
-cp app/.env.example app/.env
-# 必要に応じて値を編集
-```
-
-| 変数名 | 内容 | 例 |
+| 設定キー | 内容 | 例 |
 | --- | --- | --- |
-| `GALUCHAT_BASE_URL` | Galuchat API のベースURL | `https://galuchat.example.com` |
-| `TIMEOUT_MS` | HTTP クライアントのタイムアウト (ms) | `3000` |
+| `galuchat.base_url` | Galuchat API のベースURL | `https://galuchat.example.com` |
+| `galuchat.timeout_ms` | HTTP クライアントのタイムアウト (ms) | `10000` |
 
 ## 3. サーバーの起動
 

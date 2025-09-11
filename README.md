@@ -19,12 +19,7 @@
 composer install
 ```
 
-`.env.example` を `.env` にコピーし、必要な値を設定します。
-```
-GALUCHAT_BASE_URL=https://galuchat.example.com
-TIMEOUT_MS=3000
-MCP_BASE_PATH=/mcp
-```
+接続設定は `config/config.dev.php` に記述されています。必要に応じて `base_url` や `timeout_ms` を編集してください。
 
 ## 起動方法
 
