@@ -35,7 +35,9 @@ class ToolsController
         }
 
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Access-Control-Allow-Origin', 'https://chat.openai.com');
     }
 
     public function summarizeStays(Request $request, Response $response): Response
@@ -54,7 +56,9 @@ class ToolsController
         }
 
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Access-Control-Allow-Origin', 'https://chat.openai.com');
     }
 
     public function executeResolvePoints(array $data): array
@@ -172,6 +176,8 @@ class ToolsController
             $error['location'] = $location;
         }
         $response->getBody()->write(json_encode(['error' => $error], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Access-Control-Allow-Origin', 'https://chat.openai.com');
     }
 }

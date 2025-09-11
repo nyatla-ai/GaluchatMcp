@@ -76,7 +76,9 @@ class RpcController
             'result' => $result
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Access-Control-Allow-Origin', 'https://chat.openai.com');
     }
 
     private function error(Response $response, $id, int $code, string $message, ?array $data = null): Response
@@ -91,6 +93,8 @@ class RpcController
             'error' => $error
         ];
         $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Access-Control-Allow-Origin', 'https://chat.openai.com');
     }
 }
