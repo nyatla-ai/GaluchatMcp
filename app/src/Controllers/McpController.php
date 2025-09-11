@@ -27,20 +27,22 @@ class McpController
             true
         );
 
-        return [
-            [
-                'name' => 'resolve_points',
-                'description' => 'Resolve coordinates to district code and address.',
-                'input_schema' => $resolvePointsInputSchema,
-                'output_schema' => $resolvePointsOutputSchema,
-            ],
-            [
-                'name' => 'summarize_stays',
-                'description' => 'Group consecutive positions by region code.',
-                'input_schema' => $summarizeStaysInputSchema,
-                'output_schema' => $summarizeStaysOutputSchema,
-            ],
-        ];
+            return [
+                [
+                    'name' => 'resolve_points',
+                    'title' => 'Resolve Points',
+                    'description' => 'Resolve coordinates to district code and address.',
+                    'inputSchema' => $resolvePointsInputSchema,
+                    'outputSchema' => $resolvePointsOutputSchema,
+                ],
+                [
+                    'name' => 'summarize_stays',
+                    'title' => 'Summarize Stays',
+                    'description' => 'Group consecutive positions by region code.',
+                    'inputSchema' => $summarizeStaysInputSchema,
+                    'outputSchema' => $summarizeStaysOutputSchema,
+                ],
+            ];
     }
 
     public function manifest(Request $request, Response $response): Response

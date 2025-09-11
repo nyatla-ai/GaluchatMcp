@@ -206,9 +206,10 @@ ChatGPTクライアントと通信するために、JSON-RPC 2.0 形式のエン
   "id": 1,
   "result": {
     "tools": [
-      {"name": "resolve_points", "description": "Resolve coordinates to district code and address.", "input_schema": {...}, "output_schema": {...}},
-      {"name": "summarize_stays", "description": "Group consecutive positions by region code.", "input_schema": {...}, "output_schema": {...}}
-    ]
+      {"name": "resolve_points", "title": "Resolve Points", "description": "Resolve coordinates to district code and address.", "inputSchema": {...}, "outputSchema": {...}},
+      {"name": "summarize_stays", "title": "Summarize Stays", "description": "Group consecutive positions by region code.", "inputSchema": {...}, "outputSchema": {...}}
+    ],
+    "nextCursor": null
   }
 }
 ```

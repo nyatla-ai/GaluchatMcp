@@ -34,7 +34,10 @@ class RpcController
         try {
             switch ($method) {
                 case 'tools/list':
-                    $result = ['tools' => $this->mcp->getToolDefinitions()];
+                    $result = [
+                        'tools' => $this->mcp->getToolDefinitions(),
+                        'nextCursor' => null,
+                    ];
                     return $this->result($response, $id, $result);
                 case 'tools/call':
                     if (!is_array($params) || !isset($params['name'])) {
