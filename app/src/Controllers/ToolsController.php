@@ -61,6 +61,23 @@ class ToolsController
             ->withHeader('Access-Control-Allow-Origin', 'https://chat.openai.com');
     }
 
+    public function search(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        try {
+            $payload = $this->searchLogic($data);
+        } catch (InvalidInputException $e) {
+            $payload = [];
+        } catch (\RuntimeException $e) {
+            $payload = [];
+        }
+
+        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Access-Control-Allow-Origin', 'https://chat.openai.com');
+    }
+
     public function executeResolvePoints(array $data): array
     {
         return $this->resolvePointsLogic($data);
@@ -69,6 +86,11 @@ class ToolsController
     public function executeSummarizeStays(array $data): array
     {
         return $this->summarizeStaysLogic($data);
+    }
+
+    public function executeSearch(array $data): array
+    {
+        return $this->searchLogic($data);
     }
 
     private function resolvePointsLogic(array $data): array
@@ -164,6 +186,28 @@ class ToolsController
         return [
             'results' => $results
         ];
+    }
+
+    private function searchLogic(array $data): array
+    {
+        $query = $data['query'] ?? '';
+        if (!is_string($query)) {
+            return [];
+        }
+        $parts = array_map('trim', explode(',', $query));
+        if (count($parts) !== 2 || !is_numeric($parts[0]) || !is_numeric($parts[1])) {
+            return [];
+        }
+        $lat = (float)$parts[0];
+        $lon = (float)$parts[1];
+        $apiResults = $this->client->resolve('admin', [['lat' => $lat, 'lon' => $lon]]);
+        $apiRes = $apiResults[0] ?? ['code' => null, 'address' => null];
+        $id = $parts[0] . ',' . $parts[1];
+        return [[
+            'id' => $id,
+            'title' => $apiRes['address'],
+            'code' => $apiRes['code']
+        ]];
     }
 
     private function errorResponse(Response $response, string $code, string $message, ?array $location = null): Response

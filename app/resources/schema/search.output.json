@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": {"type": "string"},
+      "title": {"type": ["string", "null"]},
+      "code": {"type": ["string", "null"]}
+    },
+    "required": ["id", "title", "code"],
+    "additionalProperties": false
+  }
+}
