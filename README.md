@@ -3,7 +3,7 @@
 最小限のMCPサーバーで、座標から行政区画情報を取得します
 
 ## エンドポイント
-マニフェスト: https://nyatla.jp/galuchat-mcp/mcp/manifest.json
+マニフェスト: https://nyatla.jp/galuchat-mcp/manifest.json
 
 ツールの `endpoint` フィールドには、このマニフェストを取得した URL を基準に算出された絶対 URL が含まれます。
 
