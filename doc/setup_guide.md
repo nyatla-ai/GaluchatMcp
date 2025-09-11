@@ -36,6 +36,8 @@ php -S localhost:8080 -t app/public
 - `POST ../tools/resolve_points`
 - `POST ../tools/summarize_stays`
 
+マニフェスト内の `endpoint` は、アクセスしたマニフェストの URL を基準に算出された絶対 URL として返されます。
+
 詳細は [README.md](../README.md) を参照してください。
 
 ## 5. テストの実行

@@ -10,17 +10,36 @@ class McpController
 {
     public function manifest(Request $request, Response $response): Response
     {
-        $base = $request->getUri();
-        $resolvePointsUrl = (string) UriResolver::resolve($base, new Uri('../tools/resolve_points'));
-        $summarizeStaysUrl = (string) UriResolver::resolve($base, new Uri('../tools/summarize_stays'));
+        // absolute tool URLs derived from the accessed manifest URL
+        $manifestUrl = $request->getUri()->withQuery('')->withFragment('');
+        $resolvePointsUrl = (string) UriResolver::resolve($manifestUrl, new Uri('../tools/resolve_points'));
+        $summarizeStaysUrl = (string) UriResolver::resolve($manifestUrl, new Uri('../tools/summarize_stays'));
+
+        $resolvePointsInputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/resolve_points.input.json'),
+            true
+        );
+        $resolvePointsOutputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/resolve_points.output.json'),
+            true
+        );
+        $summarizeStaysInputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/summarize_stays.input.json'),
+            true
+        );
+        $summarizeStaysOutputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/summarize_stays.output.json'),
+            true
+        );
 
         $manifest = [
+            'name' => 'Galuchat MCP Server',
+            'description' => 'Reverse geocoding utilities exposed as MCP tools.',
             'tools' => [
                 [
                     'name' => 'resolve_points',
                     'endpoint' => $resolvePointsUrl,
                     'description' => 'Resolve coordinates to district code and address.',
-                    'endpoint' => '../tools/resolve_points',
                     'input' => [
                         'granularity (optional): admin|estat|jarl, default admin',
                         'points: array of {ref?, lat, lon}'
@@ -29,8 +48,8 @@ class McpController
                         'granularity: admin|estat|jarl',
                         'results: array of {ref?, code, address}'
                     ],
-                    'input_schema' => 'app/resources/schema/resolve_points.input.json',
-                    'output_schema' => 'app/resources/schema/resolve_points.output.json',
+                    'input_schema' => $resolvePointsInputSchema,
+                    'output_schema' => $resolvePointsOutputSchema,
                     'example_input' => [
                         'granularity' => 'admin',
                         'points' => [
@@ -51,15 +70,14 @@ class McpController
                     'name' => 'summarize_stays',
                     'endpoint' => $summarizeStaysUrl,
                     'description' => 'Group consecutive positions by region code.',
-                    'endpoint' => '../tools/summarize_stays',
                     'input' => [
                         'positions: array of {timestamp, lat, lon}'
                     ],
                     'output' => [
                         'results: array of {start_ts, end_ts, code, address, duration_sec, count}'
                     ],
-                    'input_schema' => 'app/resources/schema/summarize_stays.input.json',
-                    'output_schema' => 'app/resources/schema/summarize_stays.output.json',
+                    'input_schema' => $summarizeStaysInputSchema,
+                    'output_schema' => $summarizeStaysOutputSchema,
                     'example_input' => [
                         'positions' => [
                             ['timestamp' => 0, 'lat' => 35.0, 'lon' => 135.0],
