@@ -41,4 +41,26 @@ class RpcControllerTest extends TestCase
         $this->assertArrayHasKey('inputSchema', $firstTool);
         $this->assertArrayHasKey('outputSchema', $firstTool);
     }
+
+    public function testNotificationWithoutIdReturns204AndEmptyBody(): void
+    {
+        $validator = new InputValidator();
+        $client = $this->createMock(GaluchatClient::class);
+        $toolsController = new ToolsController($validator, $client);
+        $mcpController = new McpController();
+        $controller = new RpcController($toolsController, $mcpController);
+
+        $payload = [
+            'jsonrpc' => '2.0',
+            'method' => 'tools/list',
+        ];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/rpc')
+            ->withParsedBody($payload);
+        $response = new Response();
+
+        $resultResponse = $controller->handle($request, $response);
+
+        $this->assertSame(204, $resultResponse->getStatusCode());
+        $this->assertSame('', (string) $resultResponse->getBody());
+    }
 }
