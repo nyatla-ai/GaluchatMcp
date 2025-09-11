@@ -17,7 +17,7 @@ class GaluchatClient
 
     public function __construct(array $config)
     {
-        if (!isset($config['base_url']) || !is_string($config['base_url']) || $config['base_url'] === '') {
+        if (!isset($config['api_url_prefix']) || !is_string($config['api_url_prefix']) || $config['api_url_prefix'] === '') {
             throw new \RuntimeException('INVALID_CONFIG');
         }
         if (!isset($config['timeout_ms']) || !is_int($config['timeout_ms'])) {
@@ -32,10 +32,10 @@ class GaluchatClient
             }
         }
         $this->mapsets = $config['mapsets'];
-        $baseUrl = $config['base_url'];
+        $apiUrlPrefix = $config['api_url_prefix'];
         $timeout = $config['timeout_ms'] / 1000;
         $this->http = new Client([
-            'base_uri' => rtrim($baseUrl, '/'),
+            'base_uri' => rtrim($apiUrlPrefix, '/'),
             'timeout' => $timeout,
             'http_errors' => false
         ]);

@@ -10,12 +10,13 @@ composer install --no-progress
 
 ## 2. 設定ファイルの編集
 
-`config/config.dev.php` を編集して Galuchat API のベースURLやタイムアウトを設定します。
+`config/config.dev.php` を編集して Galuchat API の接続先やタイムアウトを設定します。アプリをサブディレクトリに配置する場合は URL 接頭辞 `app.url_prefix` も変更してください。
 
 | 設定キー | 内容 | 例 |
 | --- | --- | --- |
-| `galuchat.base_url` | Galuchat API のベースURL | `https://galuchat.example.com` |
+| `galuchat.api_url_prefix` | Galuchat API の URL プレフィックス | `https://galuchat.example.com` |
 | `galuchat.timeout_ms` | HTTP クライアントのタイムアウト (ms) | `10000` |
+| `app.url_prefix` | サーバーの URL 接頭辞 | `/mcp` |
 
 ## 3. サーバーの起動
 
