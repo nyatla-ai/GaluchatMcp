@@ -26,6 +26,14 @@ class McpController
             file_get_contents(__DIR__ . '/../../resources/schema/summarize_stays.output.json'),
             true
         );
+        $searchInputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/search.input.json'),
+            true
+        );
+        $searchOutputSchema = json_decode(
+            file_get_contents(__DIR__ . '/../../resources/schema/search.output.json'),
+            true
+        );
 
             return [
                 [
@@ -42,6 +50,13 @@ class McpController
                     'inputSchema' => $summarizeStaysInputSchema,
                     'outputSchema' => $summarizeStaysOutputSchema,
                 ],
+                [
+                    'name' => 'search',
+                    'title' => 'Search Address',
+                    'description' => 'Resolve a single coordinate to address.',
+                    'inputSchema' => $searchInputSchema,
+                    'outputSchema' => $searchOutputSchema,
+                ],
             ];
     }
 
@@ -51,6 +66,7 @@ class McpController
         $manifestUrl = $request->getUri()->withQuery('')->withFragment('');
         $resolvePointsUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/resolve_points'));
         $summarizeStaysUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/summarize_stays'));
+        $searchUrl = (string) UriResolver::resolve($manifestUrl, new Uri('tools/search'));
 
         $tools = $this->getToolDefinitions();
         $tools[0] += [
@@ -103,6 +119,25 @@ class McpController
                         'duration_sec' => 60,
                         'count' => 2
                     ]
+                ]
+            ]
+        ];
+        $tools[2] += [
+            'endpoint' => $searchUrl,
+            'input' => [
+                'query: "<lat>,<lon>"'
+            ],
+            'output' => [
+                'array of {id, title, code}'
+            ],
+            'example_input' => [
+                'query' => '35.0,135.0'
+            ],
+            'example_output' => [
+                [
+                    'id' => '35.0,135.0',
+                    'title' => 'Example',
+                    'code' => '00000'
                 ]
             ]
         ];

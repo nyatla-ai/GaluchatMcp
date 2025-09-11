@@ -55,6 +55,9 @@ class RpcController
                         case 'summarize_stays':
                             $res = $this->tools->executeSummarizeStays($arguments);
                             break;
+                        case 'search':
+                            $res = $this->tools->executeSearch($arguments);
+                            break;
                         default:
                             return $this->error($response, $id, -32601, 'Method not found');
                     }

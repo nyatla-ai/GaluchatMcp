@@ -26,6 +26,19 @@ class ToolsControllerTest extends TestCase
         return $app;
     }
 
+    private function createSearchApp($client): \Slim\App
+    {
+        $validator = new InputValidator();
+        $controller = new ToolsController($validator, $client);
+        $app = AppFactory::create();
+        $app->addBodyParsingMiddleware();
+        $schema = __DIR__ . '/../app/resources/schema/search.input.json';
+        $app->post('/tools/search', [$controller, 'search'])
+            ->add(new RateLimitMiddleware(100))
+            ->add(new JsonSchemaMiddleware($schema));
+        return $app;
+    }
+
     public function testResolvePointsSuccess(): void
     {
         $client = $this->createMock(GaluchatClient::class);
@@ -158,5 +171,38 @@ class ToolsControllerTest extends TestCase
         $data = json_decode((string)$response->getBody(), true);
         $this->assertSame('INVALID_INPUT', $data['error']['code']);
         $this->assertSame('Too many points', $data['error']['message']);
+    }
+
+    public function testSearchSuccess(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $client->method('resolve')->willReturn([
+            ['code' => '13101', 'address' => 'A']
+        ]);
+        $app = $this->createSearchApp($client);
+        $payload = ['query' => '35.0,135.0'];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/search')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertCount(1, $data);
+        $this->assertSame('35.0,135.0', $data[0]['id']);
+        $this->assertSame('A', $data[0]['title']);
+        $this->assertSame('13101', $data[0]['code']);
+    }
+
+    public function testSearchInvalid(): void
+    {
+        $client = $this->createMock(GaluchatClient::class);
+        $app = $this->createSearchApp($client);
+        $payload = ['query' => 'invalid'];
+        $request = (new ServerRequestFactory())->createServerRequest('POST', '/tools/search')
+            ->withParsedBody($payload);
+        $response = $app->handle($request);
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode((string)$response->getBody(), true);
+        $this->assertIsArray($data);
+        $this->assertCount(0, $data);
     }
 }
