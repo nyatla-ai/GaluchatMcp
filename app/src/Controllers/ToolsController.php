@@ -22,15 +22,10 @@ class ToolsController
     public function resolvePoints(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
-        $granularity = $data['granularity'] ?? 'admin';
         try {
-            $valid = $this->validator->validate($data);
+            $payload = $this->resolvePointsLogic($data);
         } catch (InvalidInputException $e) {
             return $this->errorResponse($response, Errors::INVALID_INPUT, $e->getMessage(), $e->getLocation());
-        }
-
-        try {
-            $apiResults = $this->client->resolve($granularity, $valid);
         } catch (\RuntimeException $e) {
             $msg = $e->getMessage();
             $code = ($msg === Errors::RATE_LIMIT || $msg === Errors::OUT_OF_COVERAGE)
@@ -39,14 +34,51 @@ class ToolsController
             return $this->errorResponse($response, $code, $msg);
         }
 
+        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function summarizeStays(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+        try {
+            $payload = $this->summarizeStaysLogic($data);
+        } catch (InvalidInputException $e) {
+            return $this->errorResponse($response, Errors::INVALID_INPUT, $e->getMessage(), $e->getLocation());
+        } catch (\RuntimeException $e) {
+            $msg = $e->getMessage();
+            $code = ($msg === Errors::RATE_LIMIT || $msg === Errors::OUT_OF_COVERAGE)
+                ? $msg
+                : Errors::API_ERROR;
+            return $this->errorResponse($response, $code, $msg);
+        }
+
+        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function executeResolvePoints(array $data): array
+    {
+        return $this->resolvePointsLogic($data);
+    }
+
+    public function executeSummarizeStays(array $data): array
+    {
+        return $this->summarizeStaysLogic($data);
+    }
+
+    private function resolvePointsLogic(array $data): array
+    {
+        $granularity = $data['granularity'] ?? 'admin';
+        $valid = $this->validator->validate($data);
+
+        $apiResults = $this->client->resolve($granularity, $valid);
+
         $results = [];
         foreach ($valid as $i => $pt) {
             $apiRes = $apiResults[$i] ?? null;
             if ($apiRes === null) {
-                return $this->errorResponse($response, Errors::OUT_OF_COVERAGE, Errors::OUT_OF_COVERAGE, [
-                    'index' => $pt['index'],
-                    'ref' => $pt['ref'] ?? null
-                ]);
+                throw new \RuntimeException(Errors::OUT_OF_COVERAGE);
             }
             $code = $apiRes['code'] ?? null;
             $address = $code === null ? null : ($apiRes['address'] ?? null);
@@ -60,32 +92,16 @@ class ToolsController
             $results[] = $item;
         }
 
-        $payload = [
+        return [
             'granularity' => $granularity,
             'results' => $results
         ];
-        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function summarizeStays(Request $request, Response $response): Response
+    private function summarizeStaysLogic(array $data): array
     {
-        $data = $request->getParsedBody();
-        try {
-            $positions = $this->validator->validatePositions($data);
-        } catch (InvalidInputException $e) {
-            return $this->errorResponse($response, Errors::INVALID_INPUT, $e->getMessage(), $e->getLocation());
-        }
-
-        try {
-            $apiResults = $this->client->resolve('admin', $positions);
-        } catch (\RuntimeException $e) {
-            $msg = $e->getMessage();
-            $code = ($msg === Errors::RATE_LIMIT || $msg === Errors::OUT_OF_COVERAGE)
-                ? $msg
-                : Errors::API_ERROR;
-            return $this->errorResponse($response, $code, $msg);
-        }
+        $positions = $this->validator->validatePositions($data);
+        $apiResults = $this->client->resolve('admin', $positions);
 
         $results = [];
         $clusterCode = null;
@@ -95,7 +111,7 @@ class ToolsController
         foreach ($positions as $i => $pos) {
             $apiRes = $apiResults[$i] ?? null;
             if ($apiRes === null) {
-                return $this->errorResponse($response, Errors::OUT_OF_COVERAGE, Errors::OUT_OF_COVERAGE, ['index' => $i]);
+                throw new \RuntimeException(Errors::OUT_OF_COVERAGE);
             }
             $code = $apiRes['code'] ?? null;
             $address = $apiRes['address'] ?? null;
@@ -141,11 +157,9 @@ class ToolsController
             ];
         }
 
-        $payload = [
+        return [
             'results' => $results
         ];
-        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        return $response->withHeader('Content-Type', 'application/json');
     }
 
     private function errorResponse(Response $response, string $code, string $message, ?array $location = null): Response

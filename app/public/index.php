@@ -2,6 +2,7 @@
 use Slim\Factory\AppFactory;
 use App\Controllers\McpController;
 use App\Controllers\ToolsController;
+use App\Controllers\RpcController;
 use App\Services\InputValidator;
 use App\Services\GaluchatClient;
 use App\Middleware\JsonSchemaMiddleware;
@@ -36,10 +37,12 @@ $validator = new InputValidator($maxPoints);
 $client = new GaluchatClient($config['galuchat']);
 $tools = new ToolsController($validator, $client);
 $mcp = new McpController();
+$rpc = new RpcController($tools, $mcp);
 
 $manifestPath = ($urlPrefix === '' ? '' : $urlPrefix) . '/manifest.json';
 
 $app->get('/manifest.json', [$mcp, 'manifest']);
+$app->post('/rpc', [$rpc, 'handle']);
 $app->post('/tools/resolve_points', [$tools, 'resolvePoints'])
     ->add(new RateLimitMiddleware(5))
     ->add(new JsonSchemaMiddleware(__DIR__ . '/../resources/schema/resolve_points.input.json'));

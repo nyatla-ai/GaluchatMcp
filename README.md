@@ -181,6 +181,68 @@ curl -X POST http://localhost:8080/mcp/tools/summarize_stays \
 }
 ```
 
+## ChatGPT互換API (JSON-RPC)
+
+ChatGPTクライアントと通信するために、JSON-RPC 2.0 形式のエンドポイントを提供します。
+
+### `POST /rpc`
+
+#### `tools/list`
+利用可能なツール一覧を返します。
+
+**リクエスト例**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list"
+}
+```
+
+**レスポンス例**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {"name": "resolve_points", "description": "Resolve coordinates to district code and address.", "input_schema": {...}, "output_schema": {...}},
+      {"name": "summarize_stays", "description": "Group consecutive positions by region code.", "input_schema": {...}, "output_schema": {...}}
+    ]
+  }
+}
+```
+
+#### `tools/call`
+ツールを実行します。`params.name` にツール名、`params.arguments` に引数を指定します。
+
+**リクエスト例**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "resolve_points",
+    "arguments": {"granularity": "admin", "points": [{"lat": 35.0, "lon": 135.0}]}
+  }
+}
+```
+
+**レスポンス例**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "granularity": "admin",
+    "results": [
+      {"code": "00000", "address": "Example"}
+    ]
+  }
+}
+```
+
 ## テスト
 
 ```bash
