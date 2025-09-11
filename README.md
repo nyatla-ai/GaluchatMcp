@@ -34,7 +34,7 @@ php -S localhost:8080 -t app/public
 
 ### `GET /mcp/manifest`
 
-利用可能なツールのマニフェストを返します。
+利用可能なツールのマニフェストを返します。各ツールの `endpoint` フィールドは絶対URLとして返されます。
 
 **curl ワンライナー**
 ```bash

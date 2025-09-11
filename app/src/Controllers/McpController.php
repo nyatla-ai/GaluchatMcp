@@ -1,6 +1,8 @@
 <?php
 namespace App\Controllers;
 
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 
@@ -8,10 +10,15 @@ class McpController
 {
     public function manifest(Request $request, Response $response): Response
     {
+        $base = $request->getUri();
+        $resolvePointsUrl = (string) UriResolver::resolve($base, new Uri('../tools/resolve_points'));
+        $summarizeStaysUrl = (string) UriResolver::resolve($base, new Uri('../tools/summarize_stays'));
+
         $manifest = [
             'tools' => [
                 [
                     'name' => 'resolve_points',
+                    'endpoint' => $resolvePointsUrl,
                     'description' => 'Resolve coordinates to district code and address.',
                     'input' => [
                         'granularity (optional): admin|estat|jarl, default admin',
@@ -41,6 +48,7 @@ class McpController
                 ],
                 [
                     'name' => 'summarize_stays',
+                    'endpoint' => $summarizeStaysUrl,
                     'description' => 'Group consecutive positions by region code.',
                     'input' => [
                         'positions: array of {timestamp, lat, lon}'
