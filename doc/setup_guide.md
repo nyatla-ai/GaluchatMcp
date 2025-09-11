@@ -33,7 +33,8 @@ php -S localhost:8080 -t app/public
 ## 4. エンドポイント
 
 - `GET /mcp/manifest`
-- `POST /tools/resolve_points`
+- `POST ../tools/resolve_points`
+- `POST ../tools/summarize_stays`
 
 詳細は [README.md](../README.md) を参照してください。
 
