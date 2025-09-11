@@ -5,7 +5,7 @@
 ## エンドポイント
 マニフェスト: https://nyatla.jp/galuchat-mcp/mcp/manifest
 
-ツールエンドポイントは上記マニフェストを基準に `../tools/resolve_points`、`../tools/summarize_stays` としてアクセスします。
+ツールの `endpoint` フィールドには、このマニフェストを取得した URL を基準に算出された絶対 URL が含まれます。
 
 
 ## 必要条件
@@ -36,9 +36,7 @@ php -S localhost:8080 -t app/public
 
 ### `GET /mcp/manifest`
 
-利用可能なツールのマニフェストを返します。各ツールの `endpoint` フィールドは絶対URLとして返されます。
-
-以降で示すツールのエンドポイントは、このマニフェストを取得した URL を基準にした相対パスです。
+利用可能なツールのマニフェストを返します。各ツールの `endpoint` フィールドは、このマニフェストを取得した URL を基準に算出された絶対 URL として返されます。
 
 **curl ワンライナー**
 ```bash
